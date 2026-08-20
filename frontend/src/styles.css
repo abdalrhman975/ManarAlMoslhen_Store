@@ -48,10 +48,10 @@ body {
 }
 
 .tab.active {
-  background: #c9a24b;
+  background: #EBC250;
   color: white;
-  border-color: #c9a24b;
-  box-shadow: 0 4px 14px rgba(201, 162, 75, 0.35);
+  border-color: #EBC250;
+  box-shadow: 0 4px 14px rgba(235, 194, 80, 0.35);
 }
 
 /* --- Product Form --- */
@@ -94,8 +94,8 @@ body {
 
 .form-fields input:focus,
 .form-fields select:focus {
-  border-color: #2d6a4f;
-  box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.12);
+  border-color: #2DAFBB;
+  box-shadow: 0 0 0 4px rgba(45, 175, 187, 0.12);
 }
 
 /* --- Image Upload --- */
@@ -130,7 +130,7 @@ body {
 }
 
 .image-upload .upload-label:hover {
-  border-color: #2d6a4f;
+  border-color: #2DAFBB;
   background: #f1f5f9;
 }
 
@@ -151,18 +151,18 @@ body {
   padding: 10px 24px;
   border-radius: 10px;
   border: none;
-  background: #2d6a4f;
+  background: #2DAFBB;
   color: white;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(45, 106, 79, 0.2);
+  box-shadow: 0 2px 6px rgba(45, 175, 187, 0.2);
 }
 
 .form-actions button:hover:not(:disabled) {
-  background: #23533c;
-  box-shadow: 0 4px 10px rgba(45, 106, 79, 0.3);
+  background: #1C9BBB;
+  box-shadow: 0 4px 10px rgba(45, 175, 187, 0.3);
   transform: translateY(-1px);
 }
 
@@ -249,7 +249,7 @@ body {
 }
 
 .price-cell {
-  color: #2d6a4f;
+  color: #2DAFBB;
   font-weight: 700;
 }
 
@@ -328,26 +328,26 @@ input, select {
 }
 
 input:focus, select:focus {
-  border-color: #2d6a4f;
-  box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.12);
+  border-color: #2DAFBB;
+  box-shadow: 0 0 0 4px rgba(45, 175, 187, 0.12);
 }
 
 button {
   padding: 11px 20px;
   border-radius: 10px;
   border: none;
-  background: #2d6a4f;
+  background: #2DAFBB;
   color: white;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(45, 106, 79, 0.2);
+  box-shadow: 0 2px 6px rgba(45, 175, 187, 0.2);
 }
 
 button:hover:not(:disabled) {
-  background: #23533c;
-  box-shadow: 0 4px 10px rgba(45, 106, 79, 0.3);
+  background: #1C9BBB;
+  box-shadow: 0 4px 10px rgba(45, 175, 187, 0.3);
   transform: translateY(-1px);
 }
 
@@ -419,7 +419,7 @@ button:disabled {
   padding: 18px 24px;
   background: #ffffff;
   border-radius: 16px;
-  border-bottom: 4px solid #c9a24b;
+  border-bottom: 4px solid #EBC250;
   margin-bottom: 24px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
 }
@@ -436,10 +436,10 @@ button:disabled {
   font-size: 14px;
   font-weight: 600;
   margin: 12px 0;
-  background: #f0fdf4;
+  background: #fafdec;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid #bbf7d0;
+  border: 1px solid #e2e8f0;
 }
 
 .details {

@@ -92,10 +92,30 @@ export default function QuantitiesTab() {
   }
 
   return (
-    <div style={{ background: "#ffffff", padding: "24px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
+    <div
+      style={{
+        background: "#ffffff",
+        padding: "24px",
+        borderRadius: "16px",
+        border: "1px solid #f1f5f9",
+        boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)"
+      }}
+    >
+      {/* الهيدر والعنوان وزر التصدير */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
+          marginBottom: "24px"
+        }}
+      >
         <div>
-          <h3 style={{ margin: 0, color: "#0f172a", fontSize: "18px" }}>📊 ملخص كميات المنتجات المطلوبة</h3>
+          <h3 style={{ margin: 0, color: "#1e293b", fontSize: "18px", fontWeight: "700" }}>
+            📊 ملخص كميات المنتجات المطلوبة
+          </h3>
           <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#64748b" }}>
             حصر تلقائي شامِل لجميع المنتجات المطلوبة في النظام
           </p>
@@ -108,38 +128,70 @@ export default function QuantitiesTab() {
             background: quantities.length === 0 ? "#cbd5e1" : "#16a34a",
             color: "white",
             border: "none",
-            padding: "9px 16px",
-            borderRadius: "8px",
-            fontWeight: "bold",
+            padding: "10px 18px",
+            borderRadius: "10px",
+            fontWeight: "600",
             cursor: quantities.length === 0 ? "not-allowed" : "pointer",
-            fontSize: "13px",
+            fontSize: "14px",
+            boxShadow: quantities.length === 0 ? "none" : "0 2px 6px rgba(22, 163, 74, 0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            transition: "all 0.2s ease"
           }}
         >
           📥 تصدير الكميات إلى Excel
         </button>
       </div>
 
+      {/* عرض حالات التحميل، لا يوجد بيانات، أو الجدول */}
       {loading ? (
-        <p style={{ textAlign: "center", color: "#64748b", padding: "30px 0" }}>جاري جلب وحساب الكميات...</p>
+        <div style={{ textAlign: "center", color: "#64748b", padding: "40px 0", fontSize: "14px" }}>
+          ⏳ جاري جلب وحساب الكميات...
+        </div>
       ) : quantities.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
-          لا توجد أي طلبات مسجلة في النظام حتى الآن
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+            color: "#94a3b8",
+            background: "#f8fafc",
+            borderRadius: "12px",
+            border: "1px dashed #cbd5e1",
+            fontSize: "14px"
+          }}
+        >
+          📦 لا توجد أي طلبات مسجلة في النظام حتى الآن
         </div>
       ) : (
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "right" }}>
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0", textAlign: "right" }}>
             <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0", color: "#475569", fontSize: "13px" }}>
-                <th style={{ padding: "12px" }}>اسم المنتج</th>
-                <th style={{ padding: "12px", textAlign: "center" }}>إجمالي الكمية المطلوبة</th>
+              <tr style={{ background: "#f8fafc", fontSize: "13px", color: "#475569" }}>
+                <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>اسم المنتج</th>
+                <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", textAlign: "center" }}>
+                  إجمالي الكمية المطلوبة
+                </th>
               </tr>
             </thead>
             <tbody>
               {quantities.map((item, idx) => (
-                <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "12px", fontWeight: "600", color: "#1e293b" }}>{item.name}</td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
-                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "4px 14px", borderRadius: "20px", fontWeight: "bold", fontSize: "13px" }}>
+                <tr key={idx}>
+                  <td style={{ padding: "12px 16px", fontWeight: "600", color: "#1e293b", borderBottom: "1px solid #f1f5f9" }}>
+                    {item.name}
+                  </td>
+                  <td style={{ padding: "12px 16px", textAlign: "center", borderBottom: "1px solid #f1f5f9" }}>
+                    <span
+                      style={{
+                        background: "#e6f7f8",
+                        color: "#2DAFBB",
+                        padding: "6px 16px",
+                        borderRadius: "20px",
+                        fontWeight: "700",
+                        fontSize: "13px",
+                        display: "inline-block"
+                      }}
+                    >
                       {item.totalQuantity} قطعة
                     </span>
                   </td>

@@ -31,10 +31,8 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
     addToCart(product, quantity);
   }
 
-  // دالة للحصول على رابط الصورة الكامل
   function getImageUrl(imageUrl) {
     if (!imageUrl) return null;
-    // إذا كان الرابط يبدأ بـ /uploads أضف الـ base URL
     if (imageUrl.startsWith('/uploads')) {
       return `http://localhost:5000${imageUrl}`;
     }
@@ -43,31 +41,90 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px 16px" }}>
-      {/* Header */}
+      {/* Header / Topbar */}
       <div style={{
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        background: "var(--surface)",
-        padding: "20px 24px",
-        borderRadius: "var(--radius-lg)",
-        boxShadow: "var(--shadow-md)",
-        border: "1px solid var(--border-color)",
+        background: "linear-gradient(135deg, #2DAFBB 0%, #1C9BBB 100%)",
+        padding: "16px 24px",
+        borderRadius: "16px",
+        boxShadow: "0 4px 14px rgba(0, 0, 0, 0.05)",
+        borderBottom: "4px solid #EBC250",
         marginBottom: "24px",
         flexWrap: "wrap",
-        gap: "16px"
+        gap: "12px",
+        position: "relative"
       }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: "20px", color: "var(--text-primary)" }}>أهلاً بك، {student.name} 👋</h2>
-          <span style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
-            الرصيد المتاح: <strong style={{ color: "var(--primary)", fontSize: "16px" }}>{remainingPoints} نقطة</strong>
+        {/* القسم الأيسر: ترحيب + رصيد */}
+        <div style={{ flex: "1", minWidth: "150px" }}>
+          <h2 style={{ margin: 0, fontSize: "18px", color: "white" }}>
+            أهلاً بك، {student.name} 👋
+          </h2>
+          <span style={{ fontSize: "14px", color: "#f8fafc" }}>
+            الرصيد المتاح: <strong style={{ fontSize: "18px", color: "#EBC250" }}>{remainingPoints} نقطة</strong>
           </span>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        {/* القسم الأوسط: الشعار */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flex: "0 1 auto"
+        }}>
+          <img
+            src="/logo 3.png"
+            alt="شعار نادي سمو الصيفي"
+            style={{
+              height: "55px",
+              width: "auto",
+              objectFit: "contain",
+              borderRadius: "12px",
+              background: "white",
+              padding: "6px 12px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              border: "2px solid #EBC250"
+            }}
+          />
+        </div>
+
+        {/* القسم الأيمن: السلة + خروج */}
+        <div style={{
+          display: "flex",
+          gap: "12px",
+          alignItems: "center",
+          flex: "1",
+          justifyContent: "flex-end",
+          minWidth: "150px"
+        }}>
           <Link to="/store/cart" style={{ textDecoration: "none" }}>
-            <button className="btn-primary" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              🛒 السلة <span style={{color: "white", padding: "2px 8px", fontSize: "12px" }}>{cartCount}</span>
+            <button style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              background: "#EBC250",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "10px",
+              fontWeight: "700",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              fontSize: "14px",
+              boxShadow: "0 2px 8px rgba(235, 194, 80, 0.3)"
+            }}>
+              🛒 السلة
+              <span style={{
+                background: "#2DAFBB",
+                color: "white",
+                padding: "2px 10px",
+                borderRadius: "20px",
+                fontSize: "12px",
+                fontWeight: "bold"
+              }}>
+                {cartCount}
+              </span>
             </button>
           </Link>
 
@@ -84,10 +141,15 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
               background: "#fef2f2",
               color: "#dc2626",
               border: "1px solid #fecaca",
-              padding: "10px 16px",
-              borderRadius: "var(--radius-sm)",
-              fontWeight: "bold",
-              cursor: "pointer"
+              padding: "10px 18px",
+              borderRadius: "10px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              fontSize: "14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px"
             }}
           >
             🚪 خروج
@@ -96,7 +158,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
       </div>
 
       {warning && (
-        <div style={{ background: "#fef2f2", color: "#dc2626", padding: "14px", borderRadius: "var(--radius-md)", marginBottom: "20px", border: "1px solid #fecaca", fontWeight: "600" }}>
+        <div style={{ background: "#fef2f2", color: "#dc2626", padding: "14px", borderRadius: "12px", marginBottom: "20px", border: "1px solid #fecaca", fontWeight: "600" }}>
           ⚠️ {warning}
         </div>
       )}
@@ -108,16 +170,18 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
             key={c}
             onClick={() => setCategory(c)}
             style={{
-              padding: "8px 20px",
-              borderRadius: "var(--radius-md)",
+              padding: "10px 22px",
+              borderRadius: "12px",
               border: "1px solid",
-              borderColor: category === c ? "var(--primary)" : "var(--border-color)",
-              background: category === c ? "var(--primary)" : "var(--surface)",
-              color: category === c ? "white" : "var(--text-secondary)",
+              borderColor: category === c ? "#EBC250" : "#cbd5e1",
+              background: category === c ? "#EBC250" : "#ffffff",
+              color: category === c ? "white" : "#64748b",
               fontWeight: "600",
+              fontSize: "14px",
               cursor: "pointer",
               whiteSpace: "nowrap",
-              transition: "all 0.2s ease"
+              transition: "all 0.25s ease",
+              boxShadow: category === c ? "0 4px 14px rgba(235, 194, 80, 0.35)" : "none"
             }}
           >
             {c === "All" ? "الكل" : c}
@@ -130,39 +194,39 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
         {products.map((p) => {
           const imageUrl = getImageUrl(p.imageUrl);
           return (
-            <div key={p._id} className="card-hover" style={{
-              background: "var(--surface)",
-              borderRadius: "var(--radius-lg)",
-              border: "1px solid var(--border-color)",
+            <div key={p._id} style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              border: "1px solid #f1f5f9",
               padding: "16px",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "space-between"
+              justifyContent: "space-between",
+              boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)"
             }}>
               <div>
                 {/* صورة المنتج */}
                 {imageUrl ? (
-                  <img 
-                    src={imageUrl} 
-                    alt={p.name} 
-                    style={{ 
-                      width: "100%", 
-                      height: "160px", 
-                      objectFit: "cover", 
-                      borderRadius: "var(--radius-md)", 
+                  <img
+                    src={imageUrl}
+                    alt={p.name}
+                    style={{
+                      width: "100%",
+                      height: "160px",
+                      objectFit: "cover",
+                      borderRadius: "10px",
                       marginBottom: "12px",
-                      background: "#f1f5f9"
+                      background: "#f8fafc"
                     }}
                     onError={(e) => {
-                      // إذا فشل تحميل الصورة، اعرض placeholder
                       e.target.style.display = 'none';
                       const parent = e.target.parentElement;
                       const placeholder = document.createElement('div');
                       placeholder.style.cssText = `
                         width: 100%;
                         height: 160px;
-                        background: #f1f5f9;
-                        border-radius: var(--radius-md);
+                        background: #f8fafc;
+                        border-radius: 10px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -175,37 +239,47 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
                     }}
                   />
                 ) : (
-                  <div style={{ 
-                    width: "100%", 
-                    height: "160px", 
-                    background: "#f1f5f9", 
-                    borderRadius: "var(--radius-md)", 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center", 
-                    color: "#94a3b8", 
-                    marginBottom: "12px", 
-                    fontSize: "14px" 
+                  <div style={{
+                    width: "100%",
+                    height: "160px",
+                    background: "#f8fafc",
+                    borderRadius: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#94a3b8",
+                    marginBottom: "12px",
+                    fontSize: "14px"
                   }}>
                     📷 لا توجد صورة
                   </div>
                 )}
-                <span style={{ fontSize: "12px", background: "var(--bg-main)", padding: "4px 10px", borderRadius: "6px", color: "var(--text-secondary)", fontWeight: "600" }}>{p.category}</span>
-                <h3 style={{ margin: "8px 0 4px 0", fontSize: "16px", color: "var(--text-primary)" }}>{p.name}</h3>
-                <p style={{ margin: "0 0 16px 0", fontSize: "16px", fontWeight: "800", color: "var(--accent)" }}>{p.price} نقطة</p>
+                <span style={{ fontSize: "12px", background: "#f1f5f9", padding: "4px 10px", borderRadius: "6px", color: "#64748b", fontWeight: "600" }}>{p.category}</span>
+                <h3 style={{ margin: "8px 0 4px 0", fontSize: "16px", color: "#1e293b" }}>{p.name}</h3>
+                <p style={{ margin: "0 0 16px 0", fontSize: "16px", fontWeight: "800", color: "#2DAFBB" }}>{p.price} نقطة</p>
               </div>
 
               <div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--bg-main)", padding: "6px 12px", borderRadius: "var(--radius-sm)", marginBottom: "12px" }}>
-                  <button onClick={() => setQty(p._id, qty(p._id) - 1)} style={{ borderRadius: "6px", border: "1px solid var(--border-color)", background: "white", cursor: "pointer", fontWeight: "bold" }}>➖</button>
-                  <span style={{ fontWeight: "700", color: "var(--text-primary)" }}>{qty(p._id)}</span>
-                  <button onClick={() => setQty(p._id, qty(p._id) + 1)} style={{ borderRadius: "6px", border: "1px solid var(--border-color)", background: "white", cursor: "pointer", fontWeight: "bold" }}>➕</button>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", padding: "6px 12px", borderRadius: "8px", marginBottom: "12px", border: "1px solid #f1f5f9" }}>
+                  <button onClick={() => setQty(p._id, qty(p._id) - 1)} style={{ borderRadius: "6px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer", fontWeight: "bold", padding: "2px 8px" }}>➖</button>
+                  <span style={{ fontWeight: "700", color: "#1e293b" }}>{qty(p._id)}</span>
+                  <button onClick={() => setQty(p._id, qty(p._id) + 1)} style={{ borderRadius: "6px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer", fontWeight: "bold", padding: "2px 8px" }}>➕</button>
                 </div>
 
                 <button
-                  className="btn-primary"
                   onClick={() => handleAddToCart(p, qty(p._id))}
-                  style={{ width: "100%" }}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "10px",
+                    border: "none",
+                    background: "#2DAFBB",
+                    color: "white",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(45, 175, 187, 0.2)"
+                  }}
                 >
                   أضف للسلة
                 </button>

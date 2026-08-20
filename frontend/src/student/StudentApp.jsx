@@ -6,13 +6,23 @@ import Cart from "./Cart.jsx";
 
 export default function StudentApp() {
   const [student, setStudent] = useState(() => {
-    const saved = localStorage.getItem("mosque_student");
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem("mosque_student");
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error("خطأ في قراءة بيانات الطالب:", e);
+      return null;
+    }
   });
 
   const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem("mosque_cart");
-    return savedCart ? JSON.parse(savedCart) : [];
+    try {
+      const savedCart = localStorage.getItem("mosque_cart");
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (e) {
+      console.error("خطأ في قراءة السلة:", e);
+      return [];
+    }
   });
 
   useEffect(() => {
@@ -27,7 +37,6 @@ export default function StudentApp() {
     }
   }, [student]);
 
-  // دالة تسجيل الخروج وتفريغ البيانات المخزنة
   function handleLogout() {
     setStudent(null);
     setCart([]);
@@ -45,7 +54,13 @@ export default function StudentApp() {
       }
       return [
         ...prev,
-        { productId: product._id, name: product.name, price: product.price, quantity },
+        {
+          productId: product._id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          quantity
+        },
       ];
     });
   }
@@ -60,7 +75,13 @@ export default function StudentApp() {
   }
 
   function updateQuantity(productId, newQty) {
-    setCart(prev => prev.map(item => item.productId === productId ? { ...item, quantity: newQty } : item));
+    if (newQty <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setCart((prev) =>
+      prev.map((item) => (item.productId === productId ? { ...item, quantity: newQty } : item))
+    );
   }
 
   if (!student) {
@@ -91,10 +112,11 @@ export default function StudentApp() {
             cart={cart}
             removeFromCart={removeFromCart}
             clearCart={clearCart}
+            updateQuantity={updateQuantity}
           />
         }
       />
-      <Route path="*" element={<Navigate to="/store" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

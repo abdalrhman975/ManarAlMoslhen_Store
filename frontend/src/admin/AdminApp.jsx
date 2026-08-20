@@ -17,58 +17,77 @@ export default function AdminApp() {
 
   return (
     <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "24px 16px" }}>
-      {/* Header */}
-      <div style={{
-        background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-        color: "white",
-        padding: "20px 28px",
-        borderRadius: "var(--radius-lg)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "20px",
-        boxShadow: "var(--shadow-md)"
-      }}>
-        <h1 style={{ margin: 0, fontSize: "22px", fontWeight: "800", letterSpacing: "-0.5px" }}>
-          ⚙️ لوحة التحكم والإدارة
-        </h1>
-      </div>
-
-      {/* Tabs */}
-      <div style={{
-        display: "flex",
-        gap: "8px",
-        background: "var(--surface)",
-        padding: "6px",
-        borderRadius: "var(--radius-md)",
-        border: "1px solid var(--border-color)",
-        marginBottom: "24px",
-        overflowX: "auto"
-      }}>
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActive(t.key)}
+      {/* الهيدر الرئيسي */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+          color: "white",
+          padding: "20px 28px",
+          borderRadius: "16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+          boxShadow: "0 4px 20px rgba(15, 23, 42, 0.08)",
+          border: "1px solid rgba(255, 255, 255, 0.05)"
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
             style={{
-              padding: "10px 20px",
-              borderRadius: "var(--radius-sm)",
-              border: "none",
-              cursor: "pointer",
-              fontWeight: "700",
-              fontSize: "14px",
-              transition: "all 0.2s ease",
-              background: active === t.key ? "var(--primary)" : "transparent",
-              color: active === t.key ? "white" : "var(--text-secondary)",
-              boxShadow: active === t.key ? "var(--shadow-sm)" : "none",
-              whiteSpace: "nowrap"
+              width: "6px",
+              height: "22px",
+              background: "#2DAFBB",
+              borderRadius: "4px"
             }}
-          >
-            {t.label}
-          </button>
-        ))}
+          />
+          <h1 style={{ margin: 0, fontSize: "20px", fontWeight: "800", letterSpacing: "-0.3px" }}>
+            ⚙️ لوحة التحكم والإدارة
+          </h1>
+        </div>
       </div>
 
-      {/* Active Tab Content */}
+      {/* شريط التبويبات (Segmented Tabs Bar) */}
+      <div
+        style={{
+          display: "flex",
+          gap: "6px",
+          background: "#ffffff",
+          padding: "6px",
+          borderRadius: "12px",
+          border: "1px solid #f1f5f9",
+          marginBottom: "24px",
+          overflowX: "auto",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
+        }}
+      >
+        {TABS.map((t) => {
+          const isActive = active === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActive(t.key)}
+              style={{
+                padding: "10px 22px",
+                borderRadius: "9px",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: "700",
+                fontSize: "14px",
+                transition: "all 0.2s ease",
+                background: isActive ? "#2DAFBB" : "transparent",
+                color: isActive ? "#ffffff" : "#64748b",
+                boxShadow: isActive ? "0 2px 8px rgba(45, 175, 187, 0.3)" : "none",
+                whiteSpace: "nowrap"
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* المحتوى النشط للتبويب */}
       <div className="admin-content">
         <ActiveComp />
       </div>
