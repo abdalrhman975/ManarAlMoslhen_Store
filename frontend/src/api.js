@@ -1,7 +1,9 @@
+const BASE_URL = "https://manaralmoslhen-store.onrender.com";
+
 export const api = {
   // --- تسجيل الدخول ---
   studentLogin: async (name, password) => {
-    const res = await fetch("/api/students/login", {
+    const res = await fetch(`${BASE_URL}/api/students/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, password }),
@@ -12,7 +14,7 @@ export const api = {
   },
 
   adminLogin: async (password) => {
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
@@ -24,12 +26,12 @@ export const api = {
 
   // --- إدارة الطلاب ---
   getStudents: async () => {
-    const res = await fetch("/api/students");
+    const res = await fetch(`${BASE_URL}/api/students`);
     return res.json();
   },
 
   addStudent: async (studentData) => {
-    const res = await fetch("/api/students", {
+    const res = await fetch(`${BASE_URL}/api/students`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(studentData),
@@ -44,7 +46,7 @@ export const api = {
   },
 
   bulkCreateStudents: async (studentsArray) => {
-    const res = await fetch("/api/students/bulk", {
+    const res = await fetch(`${BASE_URL}/api/students/bulk`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(studentsArray),
@@ -55,7 +57,7 @@ export const api = {
   },
 
   updateStudent: async (id, studentData) => {
-    const res = await fetch(`/api/students/${id}`, {
+    const res = await fetch(`${BASE_URL}/api/students/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(studentData),
@@ -64,7 +66,7 @@ export const api = {
   },
 
   deleteStudent: async (id) => {
-    const res = await fetch(`/api/students/${id}`, { method: "DELETE" });
+    const res = await fetch(`${BASE_URL}/api/students/${id}`, { method: "DELETE" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "فشل حذف الطالب");
     return data;
@@ -74,8 +76,8 @@ export const api = {
   getProducts: async (category = "All") => {
     try {
       const url = category && category !== "All" 
-        ? `/api/products?category=${category}`
-        : `/api/products`;
+        ? `${BASE_URL}/api/products?category=${category}`
+        : `${BASE_URL}/api/products`;
       const res = await fetch(url);
       if (!res.ok) return [];
       const data = await res.json();
@@ -86,7 +88,7 @@ export const api = {
   },
 
   createProduct: async (formData) => {
-    const res = await fetch("/api/products", { 
+    const res = await fetch(`${BASE_URL}/api/products`, { 
       method: "POST", 
       body: formData 
     });
@@ -96,7 +98,7 @@ export const api = {
   },
 
   updateProduct: async (id, formData) => {
-    const res = await fetch(`/api/products/${id}`, { 
+    const res = await fetch(`${BASE_URL}/api/products/${id}`, { 
       method: "PUT", 
       body: formData 
     });
@@ -106,7 +108,7 @@ export const api = {
   },
 
   deleteProduct: async (id) => {
-    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+    const res = await fetch(`${BASE_URL}/api/products/${id}`, { method: "DELETE" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "فشل حذف المنتج");
     return data;
@@ -114,7 +116,7 @@ export const api = {
 
   // --- إدارة الطلبات والتسوق ---
   submitOrder: async (studentId, items) => {
-    const res = await fetch("/api/orders", {
+    const res = await fetch(`${BASE_URL}/api/orders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ studentId, items }),
@@ -125,17 +127,17 @@ export const api = {
   },
 
   getOrderQuantities: async () => {
-    const res = await fetch("/api/orders/quantities");
+    const res = await fetch(`${BASE_URL}/api/orders/quantities`);
     return res.json();
   },
 
   getStudentSelections: async () => {
-    const res = await fetch("/api/orders");
+    const res = await fetch(`${BASE_URL}/api/orders`);
     return res.json();
   },
 
   updateOrderStatus: async (orderId) => {
-    const res = await fetch(`/api/orders/${orderId}/deliver`, {
+    const res = await fetch(`${BASE_URL}/api/orders/${orderId}/deliver`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
     });
@@ -144,7 +146,7 @@ export const api = {
 
   async getStudentOrders(studentId) {
     try {
-      const response = await fetch(`/api/orders/student/${studentId}`);
+      const response = await fetch(`${BASE_URL}/api/orders/student/${studentId}`);
       if (!response.ok) throw new Error("فشل في جلب الطلبات");
       return await response.json();
     } catch (err) {
@@ -152,20 +154,20 @@ export const api = {
       return [];
     }
   },
-  
+
   // --- إدارة الكميات ---
   getQuantities: async () => {
-    const res = await fetch("/api/orders/quantities");
+    const res = await fetch(`${BASE_URL}/api/orders/quantities`);
     return res.json();
   },
 
   getAllOrders: async () => {
-    const res = await fetch("/api/orders");
+    const res = await fetch(`${BASE_URL}/api/orders`);
     return res.json();
   },
 
   markDelivered: async (orderId) => {
-    const res = await fetch(`/api/orders/${orderId}/deliver`, {
+    const res = await fetch(`${BASE_URL}/api/orders/${orderId}/deliver`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
     });

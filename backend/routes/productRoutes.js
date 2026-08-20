@@ -29,7 +29,10 @@ router.post("/", async (req, res) => {
         const { name, category, price } = req.body;
         let imageUrl = null;
         if (req.file) {
-          imageUrl = `/uploads/${req.file.filename}`;
+          // بناء رابط كامل يضم نطاق السيرفر الحالي
+          const protocol = req.protocol;
+          const host = req.get("host");
+          imageUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
         }
 
         const product = new Product({
@@ -42,8 +45,7 @@ router.post("/", async (req, res) => {
         await product.save();
         res.status(201).json(product);
       } catch (error) {
-        // حذف الصورة إذا فشل الحفظ
-        if (req.file) {
+        if (req.file && fs.existsSync(req.file.path)) {
           fs.unlinkSync(req.file.path);
         }
         res.status(500).json({ message: error.message });
@@ -72,16 +74,18 @@ router.put("/:id", async (req, res) => {
         const { name, category, price } = req.body;
         let imageUrl = product.imageUrl;
 
-        // إذا تم رفع صورة جديدة
         if (req.file) {
-          // حذف الصورة القديمة
-          if (product.imageUrl) {
-            const oldPath = path.join(__dirname, "..", product.imageUrl);
+          // حذف الصورة القديمة إذا كانت مخزنة محلياً
+          if (product.imageUrl && product.imageUrl.includes("/uploads/")) {
+            const filename = product.imageUrl.split("/uploads/")[1];
+            const oldPath = path.join(__dirname, "..", "uploads", filename);
             if (fs.existsSync(oldPath)) {
               fs.unlinkSync(oldPath);
             }
           }
-          imageUrl = `/uploads/${req.file.filename}`;
+          const protocol = req.protocol;
+          const host = req.get("host");
+          imageUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
         }
 
         product.name = name || product.name;
@@ -92,8 +96,7 @@ router.put("/:id", async (req, res) => {
         await product.save();
         res.json(product);
       } catch (error) {
-        // حذف الصورة الجديدة إذا فشل التعديل
-        if (req.file) {
+        if (req.file && fs.existsSync(req.file.path)) {
           fs.unlinkSync(req.file.path);
         }
         res.status(500).json({ message: error.message });
@@ -112,9 +115,9 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ message: "المنتج غير موجود" });
     }
 
-    // حذف ملف الصورة
-    if (product.imageUrl) {
-      const imagePath = path.join(__dirname, "..", product.imageUrl);
+    if (product.imageUrl && product.imageUrl.includes("/uploads/")) {
+      const filename = product.imageUrl.split("/uploads/")[1];
+      const imagePath = path.join(__dirname, "..", "uploads", filename);
       if (fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
