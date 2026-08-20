@@ -3,6 +3,7 @@ const router = express.Router();
 const Product = require("../models/Product");
 const fs = require("fs");
 const path = require("path");
+const upload = require("../middleware/upload");
 
 // GET - جلب جميع المنتجات
 router.get("/", async (req, res) => {

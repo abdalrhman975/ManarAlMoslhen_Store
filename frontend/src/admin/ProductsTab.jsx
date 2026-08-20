@@ -31,9 +31,10 @@ export default function ProductsTab() {
     setName(product.name);
     setCategory(product.category);
     setPrice(product.price.toString());
-    setImagePreview(product.imageUrl ? `http://localhost:5000${product.imageUrl}` : null);
+    setImagePreview(product.imageUrl ? `https://manaralmoslhen-store.onrender.com${product.imageUrl}` : null);
     setImage(null);
   }
+
 
   function resetForm() {
     setEditingProduct(null);
@@ -261,7 +262,7 @@ export default function ProductsTab() {
                 <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", width: "60px" }}>
                   {p.imageUrl ? (
                     <img
-                      src={`http://localhost:5000${p.imageUrl}`}
+                      src={`https://manaralmoslhen-store.onrender.com${p.imageUrl}`}
                       alt={p.name}
                       style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e8f0" }}
                     />

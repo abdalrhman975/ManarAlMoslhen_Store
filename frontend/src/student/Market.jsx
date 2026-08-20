@@ -34,7 +34,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
   function getImageUrl(imageUrl) {
     if (!imageUrl) return null;
     if (imageUrl.startsWith('/uploads')) {
-      return `http://localhost:5000${imageUrl}`;
+      return `https://manaralmoslhen-store.onrender.com${imageUrl}`;
     }
     return imageUrl;
   }
