@@ -35,6 +35,13 @@ export default function ProductsTab() {
     setImage(null);
   }
 
+    function getImageUrl(imageUrl) {
+    if (!imageUrl) return null;
+    if (imageUrl.startsWith('/uploads')) {
+      return `https://manaralmoslhen-store.onrender.com${imageUrl}`;
+    }
+    return imageUrl;
+  }
 
   function resetForm() {
     setEditingProduct(null);
@@ -249,7 +256,7 @@ export default function ProductsTab() {
         <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0", textAlign: "right" }}>
           <thead>
             <tr style={{ background: "#f8fafc", fontSize: "13px", color: "#475569" }}>
-              <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>الصورة</th>
+              {/* <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>الصورة</th> */}
               <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>اسم المنتج</th>
               <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>التصنيف</th>
               <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>السعر</th>
@@ -258,8 +265,9 @@ export default function ProductsTab() {
           </thead>
           <tbody>
             {products.map((p) => (
+              
               <tr key={p._id}>
-                <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", width: "60px" }}>
+                {/* <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", width: "60px" }}>
                   {p.imageUrl ? (
                     <img
                       src={`https://manaralmoslhen-store.onrender.com${p.imageUrl}`}
@@ -271,7 +279,7 @@ export default function ProductsTab() {
                       🖼️
                     </div>
                   )}
-                </td>
+                </td> */}
                 <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontWeight: "600", color: "#0f172a" }}>
                   {p.name}
                 </td>

@@ -74,7 +74,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
           flex: "0 1 auto"
         }}>
           <img
-            src="/logo 3.png"
+            src="/logo3.png"
             alt="شعار نادي سمو الصيفي"
             style={{
               height: "55px",
@@ -116,10 +116,10 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
             }}>
               🛒 السلة
               <span style={{
-                background: "#2DAFBB",
-                color: "white",
+                // background: "#2DAFBB",
+                color: "#2DAFBB",
                 padding: "2px 10px",
-                borderRadius: "20px",
+                borderRadius: "10px",
                 fontSize: "12px",
                 fontWeight: "bold"
               }}>
@@ -138,7 +138,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
               }
             }}
             style={{
-              background: "#fef2f2",
+              background: "white",
               color: "#dc2626",
               border: "1px solid #fecaca",
               padding: "10px 18px",
@@ -152,7 +152,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
               gap: "6px"
             }}
           >
-            🚪 خروج
+             تسجيل الخروج
           </button>
         </div>
       </div>
