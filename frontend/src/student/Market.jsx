@@ -24,6 +24,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
   function handleAddToCart(product, quantity) {
     setWarning("");
     const itemCost = product.price * quantity;
+    alert("تمت اضافة المنتج إلى السلة بنجاح ✅")
     if (remainingPoints < itemCost) {
       setWarning(`عذراً، رصيدك المتاح (${remainingPoints} نقطة) لا يكفي لإضافة هذا المنتج.`);
       return;
@@ -116,7 +117,6 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
             }}>
               🛒 السلة
               <span style={{
-                // background: "#2DAFBB",
                 color: "#2DAFBB",
                 padding: "2px 10px",
                 borderRadius: "10px",
@@ -139,7 +139,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
             }}
             style={{
               background: "white",
-              color: "#dc2626",
+              color: "#2DAFBB",
               border: "1px solid #fecaca",
               padding: "10px 18px",
               borderRadius: "10px",
