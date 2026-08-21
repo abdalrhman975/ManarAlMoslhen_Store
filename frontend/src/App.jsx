@@ -7,7 +7,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/store" replace />} />
-        <Route path="/admin/*" element={<AdminApp />} />
+        <Route path="ManarAlMoslhienSomo/admin/*" element={<AdminApp />} />
         <Route path="/store/*" element={<StudentApp />} />
       </Routes>
     </BrowserRouter>
