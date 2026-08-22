@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 
-const CATEGORIES = ["All", "لعبة", "كتاب", "قرطاسية", "إلكترونيات","أخرى"];
+const CATEGORIES = ["All", "لعبة", "كتاب", "قرطاسية", "إلكترونيات", "أخرى"];
 
 export default function Market({ student, setStudent, onLogout, cart, addToCart }) {
   const [products, setProducts] = useState([]);
@@ -32,11 +32,23 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
   }
 
   function getImageUrl(imageUrl) {
-    if (!imageUrl) return null;
-    if (imageUrl.startsWith('/uploads')) {
-      return `https://manaralmoslhen-store.onrender.com${imageUrl}`;
+    if (!imageUrl || typeof imageUrl !== "string") return null;
+    const cleanUrl = imageUrl.trim();
+    if (!cleanUrl) return null;
+
+    // إذا كان الرابط مساراً نسبيًا يبدأ بـ /uploads
+    if (cleanUrl.startsWith("/uploads")) {
+      return `https://manaralmoslhen-store.onrender.com${cleanUrl}`;
     }
-    return imageUrl;
+
+    // إذا كان رابطاً كاملاً قديم يحتوي على localhost، استبدل النطاق لبيئة الإنتاج
+    if (cleanUrl.includes("/uploads/")) {
+      const filename = cleanUrl.split("/uploads/")[1];
+      return `https://manaralmoslhen-store.onrender.com/uploads/${filename}`;
+    }
+
+    // إذا كان رابط صورة خارجي كامل (http/https)
+    return cleanUrl;
   }
 
   return (
@@ -151,7 +163,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
               gap: "6px"
             }}
           >
-             تسجيل الخروج
+            تسجيل الخروج
           </button>
         </div>
       </div>
