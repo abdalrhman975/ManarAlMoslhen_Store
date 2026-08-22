@@ -138,12 +138,8 @@ router.post("/bulk", async (req, res) => {
       return res.status(400).json({ message: "الملف فارغ أو غير صالح" });
     }
 
-    const processedProducts = products.map((s) => ({
-      ...s,
-    }));
-
-    const createdProducts = await Product.insertMany(processedProducts);
-    res.json({ message: "تم استيراد الطلاب بنجاح", count: createdProducts.length });
+    const createdProducts = await Product.insertMany(products);
+    res.json({ message: "تم استيراد المنتجات بنجاح", count: createdProducts.length });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

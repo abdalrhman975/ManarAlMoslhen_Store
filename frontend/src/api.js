@@ -75,7 +75,7 @@ export const api = {
   // --- إدارة المنتجات (مع الصور) ---
   getProducts: async (category = "All") => {
     try {
-      const url = category && category !== "All" 
+      const url = category && category !== "All"
         ? `${BASE_URL}/api/products?category=${category}`
         : `${BASE_URL}/api/products`;
       const res = await fetch(url);
@@ -87,22 +87,22 @@ export const api = {
     }
   },
 
-    bulkCreateProducts: async (ProductsArray) => {
-    const res = await fetch(`${BASE_URL}/api/Products/bulk`, {
+  bulkCreateProducts: async (ProductsArray) => {
+    const res = await fetch(`${BASE_URL}/api/products/bulk`, { // 👈 تم التعديل إلى /api/products/bulk
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ProductsArray),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "فشل استيراد الطلاب");
+    if (!res.ok) throw new Error(data.message || "فشل استيراد المنتجات");
     return data;
   },
 
 
   createProduct: async (formData) => {
-    const res = await fetch(`${BASE_URL}/api/products`, { 
-      method: "POST", 
-      body: formData 
+    const res = await fetch(`${BASE_URL}/api/products`, {
+      method: "POST",
+      body: formData
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "فشلت إضافة المنتج");
@@ -110,9 +110,9 @@ export const api = {
   },
 
   updateProduct: async (id, formData) => {
-    const res = await fetch(`${BASE_URL}/api/products/${id}`, { 
-      method: "PUT", 
-      body: formData 
+    const res = await fetch(`${BASE_URL}/api/products/${id}`, {
+      method: "PUT",
+      body: formData
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "فشل تعديل المنتج");

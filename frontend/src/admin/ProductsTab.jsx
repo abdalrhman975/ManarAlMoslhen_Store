@@ -106,39 +106,39 @@ export default function ProductsTab() {
 
 
    function handleFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-  
-      setLoading(true);
-      const reader = new FileReader();
-  
-      reader.onload = async (evt) => {
-        try {
-          const bstr = evt.target.result;
-          const wb = XLSX.read(bstr, { type: "binary" });
-          const wsname = wb.SheetNames[0];
-          const ws = wb.Sheets[wsname];
-          const data = XLSX.utils.sheet_to_json(ws);
-  
-          const formattedStudents = data.map((item) => ({
-            name: item["اسم اللعبة"] || item["الاسم"] || item["name"] || "بدون اسم",
-            category: String(item["التصنيف"] || item["النوع"]),
-            price: Number(item["السعر"] || item["النقاط"] || item["points"] || 0),
-          }));
-  
-          await api.bulkCreateProducts(formattedStudents);
-          alert(`تمت إضافة ${formattedStudents.length} منتجات بنجاح! 🎉`);
-          loadStudents();
-        } catch (err) {
-          alert("حدث خطأ أثناء قراءة الملف: " + err.message);
-        } finally {
-          setLoading(false);
-          e.target.value = "";
-        }
-      };
-  
-      reader.readAsBinaryString(file);
+  const file = e.target.files[0];
+  if (!file) return;
+
+  setLoading(true);
+  const reader = new FileReader();
+
+  reader.onload = async (evt) => {
+    try {
+      const bstr = evt.target.result;
+      const wb = XLSX.read(bstr, { type: "binary" });
+      const wsname = wb.SheetNames[0];
+      const ws = wb.Sheets[wsname];
+      const data = XLSX.utils.sheet_to_json(ws);
+
+      const formattedProducts = data.map((item) => ({
+        name: item["اسم اللعبة"] || item["الاسم"] || item["name"] || "بدون اسم",
+        category: String(item["التصنيف"] || item["النوع"] || "أخرى"),
+        price: Number(item["السعر"] || item["النقاط"] || item["points"] || 0),
+      }));
+
+      await api.bulkCreateProducts(formattedProducts);
+      alert(`تمت إضافة ${formattedProducts.length} منتجات بنجاح! 🎉`);
+      await loadProducts(); // 👈 تم التعديل من loadStudents إلى loadProducts
+    } catch (err) {
+      alert("حدث خطأ أثناء قراءة الملف: " + err.message);
+    } finally {
+      setLoading(false);
+      e.target.value = "";
     }
+  };
+
+  reader.readAsBinaryString(file);
+}
 
   return (
     <div>
