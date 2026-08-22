@@ -24,7 +24,6 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
   function handleAddToCart(product, quantity) {
     setWarning("");
     const itemCost = product.price * quantity;
-    alert("تمت اضافة المنتج إلى السلة بنجاح ✅")
     if (remainingPoints < itemCost) {
       setWarning(`عذراً، رصيدك المتاح (${remainingPoints} نقطة) لا يكفي لإضافة هذا المنتج.`);
       return;

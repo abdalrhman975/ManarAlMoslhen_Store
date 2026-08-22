@@ -131,18 +131,46 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// POST - استيراد منتجات متعددة
 router.post("/bulk", async (req, res) => {
   try {
     const products = req.body;
+
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({ message: "الملف فارغ أو غير صالح" });
     }
 
-    const createdProducts = await Product.insertMany(products);
-    res.json({ message: "تم استيراد المنتجات بنجاح", count: createdProducts.length });
+    // 1. تنظيف البيانات وتأكيد القيم المطلوبة لكل منتج
+    const validProducts = products
+      .map((p) => ({
+        name: p.name ? String(p.name).trim() : "",
+        category: p.category ? String(p.category).trim() : "أخرى",
+        price: Number(p.price) || 0,
+        imageUrl: p.imageUrl || null,
+      }))
+      .filter((p) => p.name !== ""); // استبعاد الصفوف الفارغة من Excel
+
+    if (validProducts.length === 0) {
+      return res.status(400).json({ message: "لا توجد بيانات صالحة للاستيراد" });
+    }
+
+    // 2. استخدام { ordered: false } لعدم إيقاف العملية إذا وجد عنصر مكرر أو خاطئ
+    const createdProducts = await Product.insertMany(validProducts, { ordered: false });
+
+    res.json({
+      message: "تم استيراد المنتجات بنجاح",
+      count: createdProducts.length,
+    });
   } catch (err) {
+    // في حال تم حفظ جزء من البيانات وفشل الجزء الآخر بسبب تكرار الأسماء
+    if (err.insertedDocs && err.insertedDocs.length > 0) {
+      return res.json({
+        message: "تم استيراد المنتجات الصالحة وتجاهل العناصر المكررة/الخاطئة",
+        count: err.insertedDocs.length,
+      });
+    }
+
     res.status(500).json({ message: err.message });
   }
 });
-
 module.exports = router;

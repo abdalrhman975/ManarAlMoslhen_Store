@@ -120,15 +120,53 @@ export default function ProductsTab() {
       const ws = wb.Sheets[wsname];
       const data = XLSX.utils.sheet_to_json(ws);
 
-      const formattedProducts = data.map((item) => ({
-        name: item["اسم اللعبة"] || item["الاسم"] || item["name"] || "بدون اسم",
-        category: String(item["التصنيف"] || item["النوع"] || "أخرى"),
-        price: Number(item["السعر"] || item["النقاط"] || item["points"] || 0),
-      }));
+      if (!data || data.length === 0) {
+        alert("الملف فارغ أو لا يحتوي على بيانات صالحة");
+        return;
+      }
+
+      const formattedProducts = data.map((item, index) => {
+        // 1. تنظيف مفاتيح الأعمدة من المسافات المخفية (Leading/Trailing spaces)
+        const cleanItem = {};
+        Object.keys(item).forEach((key) => {
+          cleanItem[key.trim()] = item[key];
+        });
+
+        // 2. البحث عن اسم المنتج وتجنب إعطاء نفس الاسم لجميع الصفوف
+        const rawName =
+          cleanItem["اسم اللعبة"] ||
+          cleanItem["الاسم"] ||
+          cleanItem["اسم المنتج"] ||
+          cleanItem["name"] ||
+          cleanItem["Name"];
+
+        const name = rawName ? String(rawName).trim() : `منتج ${index + 1}`;
+
+        // 3. استخراج التصنيف
+        const category = String(
+          cleanItem["التصنيف"] || cleanItem["النوع"] || cleanItem["category"] || "أخرى"
+        ).trim();
+
+        // 4. استخراج السعر باستخدام (??) لمنع تجاهل الصفر كقيمة صحيحة
+        const rawPrice =
+          cleanItem["السعر"] ??
+          cleanItem["النقاط"] ??
+          cleanItem["points"] ??
+          cleanItem["price"] ??
+          0;
+
+        return {
+          name,
+          category,
+          price: Number(rawPrice) || 0,
+        };
+      });
+
+      console.log("البيانات الجاهزة للإرسال للباك إند:", formattedProducts);
 
       await api.bulkCreateProducts(formattedProducts);
       alert(`تمت إضافة ${formattedProducts.length} منتجات بنجاح! 🎉`);
-      await loadProducts(); // 👈 تم التعديل من loadStudents إلى loadProducts
+      await loadProducts();
     } catch (err) {
       alert("حدث خطأ أثناء قراءة الملف: " + err.message);
     } finally {
@@ -139,7 +177,6 @@ export default function ProductsTab() {
 
   reader.readAsBinaryString(file);
 }
-
   return (
     <div>
       {/* نموذج إضافة وتعديل المنتجات */}
