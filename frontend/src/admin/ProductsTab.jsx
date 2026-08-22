@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../api.js";
+import * as XLSX from "xlsx";
+
 
 export default function ProductsTab() {
   const [products, setProducts] = useState([]);
@@ -290,6 +292,7 @@ export default function ProductsTab() {
 
       {/* جدول عرض المنتجات */}
       <div style={{ background: "#ffffff", padding: "24px", borderRadius: "16px", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)", overflowX: "auto" }}>
+
         <label
               style={{
                 background: "#eff6ff",
@@ -310,7 +313,7 @@ export default function ProductsTab() {
               <input
                 type="file"
                 accept=".xlsx, .xls, .csv"
-                // onChange={handleFileUpload}
+                onChange={handleFileUpload}
                 style={{ display: "none" }}
                 disabled={loading}
               />
