@@ -224,10 +224,11 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
                     style={{
                       width: "100%",
                       height: "160px",
-                      objectFit: "cover",
+                      objectFit: "contain", // يعرض الصورة كاملة بدون تشويه أو قص
                       borderRadius: "10px",
                       marginBottom: "12px",
-                      background: "#f8fafc"
+                      background: "#f8fafc",
+                      boxSizing: "border-box"
                     }}
                     onError={(e) => {
                       e.target.style.display = 'none';
