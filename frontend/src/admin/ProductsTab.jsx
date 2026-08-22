@@ -102,6 +102,42 @@ export default function ProductsTab() {
     }
   }
 
+
+   function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+  
+      setLoading(true);
+      const reader = new FileReader();
+  
+      reader.onload = async (evt) => {
+        try {
+          const bstr = evt.target.result;
+          const wb = XLSX.read(bstr, { type: "binary" });
+          const wsname = wb.SheetNames[0];
+          const ws = wb.Sheets[wsname];
+          const data = XLSX.utils.sheet_to_json(ws);
+  
+          const formattedStudents = data.map((item) => ({
+            name: item["اسم اللعبة"] || item["الاسم"] || item["name"] || "بدون اسم",
+            category: String(item["التصنيف"] || item["النوع"]),
+            price: Number(item["السعر"] || item["النقاط"] || item["points"] || 0),
+          }));
+  
+          await api.bulkCreateProducts(formattedStudents);
+          alert(`تمت إضافة ${formattedStudents.length} منتجات بنجاح! 🎉`);
+          loadStudents();
+        } catch (err) {
+          alert("حدث خطأ أثناء قراءة الملف: " + err.message);
+        } finally {
+          setLoading(false);
+          e.target.value = "";
+        }
+      };
+  
+      reader.readAsBinaryString(file);
+    }
+
   return (
     <div>
       {/* نموذج إضافة وتعديل المنتجات */}
@@ -152,6 +188,7 @@ export default function ProductsTab() {
             <option value="لعبة">🎮 لعبة</option>
             <option value="كتاب">📚 كتاب</option>
             <option value="قرطاسية">✏️ قرطاسية</option>
+            <option value="قرطاسية">🚨 إلكترونيات </option>
             <option value="أخرى">📌 أخرى</option>
           </select>
 
@@ -253,6 +290,31 @@ export default function ProductsTab() {
 
       {/* جدول عرض المنتجات */}
       <div style={{ background: "#ffffff", padding: "24px", borderRadius: "16px", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)", overflowX: "auto" }}>
+        <label
+              style={{
+                background: "#eff6ff",
+                color: "#2563eb",
+                border: "1px solid #bfdbfe",
+                padding: "8px 16px",
+                borderRadius: "10px",
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: "13px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                transition: "all 0.2s ease"
+              }}
+            >
+              {loading ? "⏳ جاري الاستيراد..." : "📤 استيراد من Excel"}
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                // onChange={handleFileUpload}
+                style={{ display: "none" }}
+                disabled={loading}
+              />
+            </label>
         <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0", textAlign: "right" }}>
           <thead>
             <tr style={{ background: "#f8fafc", fontSize: "13px", color: "#475569" }}>

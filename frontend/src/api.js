@@ -87,6 +87,18 @@ export const api = {
     }
   },
 
+    bulkCreateProducts: async (ProductsArray) => {
+    const res = await fetch(`${BASE_URL}/api/Products/bulk`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ProductsArray),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "فشل استيراد الطلاب");
+    return data;
+  },
+
+
   createProduct: async (formData) => {
     const res = await fetch(`${BASE_URL}/api/products`, { 
       method: "POST", 

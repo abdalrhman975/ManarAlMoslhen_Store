@@ -10,7 +10,7 @@ const ProductSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["لعبة", "كتاب", "قرطاسية", "أخرى"],
+      enum: ["لعبة", "كتاب", "قرطاسية", "أخرى","إلكترونيات"],
       default: "لعبة",
     },
     price: {

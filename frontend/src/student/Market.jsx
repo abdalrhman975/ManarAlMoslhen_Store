@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 
-const CATEGORIES = ["All", "لعبة", "كتاب", "قرطاسية", "أخرى"];
+const CATEGORIES = ["All", "لعبة", "كتاب", "قرطاسية", "إلكترونيات","أخرى"];
 
 export default function Market({ student, setStudent, onLogout, cart, addToCart }) {
   const [products, setProducts] = useState([]);

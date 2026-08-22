@@ -131,4 +131,22 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+router.post("/bulk", async (req, res) => {
+  try {
+    const products = req.body;
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ message: "الملف فارغ أو غير صالح" });
+    }
+
+    const processedproducts = products.map((s) => ({
+      ...s,
+    }));
+
+    const createdproducts = await products.insertMany(processedproducts);
+    res.json({ message: "تم استيراد الطلاب بنجاح", count: createdproducts.length });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
