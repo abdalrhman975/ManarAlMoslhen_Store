@@ -224,7 +224,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
                     style={{
                       width: "100%",
                       height: "160px",
-                      objectFit: "contain", // يعرض الصورة كاملة بدون تشويه أو قص
+                      objectFit: "contain", 
                       borderRadius: "10px",
                       marginBottom: "12px",
                       background: "#f8fafc",
