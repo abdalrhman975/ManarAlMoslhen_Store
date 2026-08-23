@@ -23,7 +23,12 @@ export default function Cart({
 
   // اعتماد السلة المزامنة من بيانات الطالب بالداتابيز أولاً، ثم الـ Prop
   const currentCart = student?.cart || cart || [];
+  
+  // حساب مجموع نقاط السلة الحالية
   const totalPoints = currentCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  // 💡 حساب النقاط المتبقية حياً (تتحدث فورياً عند تغيير السلة)
+  const remainingPoints = (student?.points || 0) - totalPoints;
 
   // جلب تاريخ الطلبات عند تحميل الصفحة
   useEffect(() => {
@@ -67,6 +72,12 @@ export default function Cart({
       return;
     }
 
+    // 🛑 فحص قبل الزيادة: هل الرصيد المتبقي يسمح بزيادة الكمية؟
+    if (delta > 0 && remainingPoints < (currentCart.find(i => (i.productId || i._id) === productId)?.price || 0)) {
+      showToast("رصيد نقاطك المتبقي لا يكفي لزيادة الكمية!", "warning");
+      return;
+    }
+
     try {
       if (api.updateCartQuantity && studentId) {
         const res = await api.updateCartQuantity(studentId, productId, newQty);
@@ -78,7 +89,7 @@ export default function Cart({
         updateQuantity(productId, newQty);
       }
     } catch (err) {
-      showToast("حدث خطأ أثناء تعديل الكمية", "warning");
+      showToast(err?.message || "حدث خطأ أثناء تعديل الكمية", "warning");
     }
   }
 
@@ -103,7 +114,7 @@ export default function Cart({
   async function handleCheckout() {
     if (currentCart.length === 0) return;
 
-    if ((student?.points || 0) < totalPoints) {
+    if (remainingPoints < 0) {
       showToast("نقاطك الحالية لا تكفي لإتمام هذا الطلب!", "warning");
       return;
     }
@@ -228,9 +239,19 @@ export default function Cart({
         <h2 style={{ margin: 0, fontSize: "20px", color: "var(--text-primary)" }}>🛒 سلة التسوق</h2>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           {student && (
-            <span style={{ fontSize: "14px", color: "var(--accent)", fontWeight: "600" }}>
-              النقاط المتبقية: {student.points || 0}
-            </span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+              <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                الرصيد الكلي: {student.points || 0}
+              </span>
+              {/* 💡 يظهر المتبقي باللون الأحادي، ولو وصل للسالب يظهر باللون الأحمر تحذيراً */}
+              <span style={{ 
+                fontSize: "15px", 
+                color: remainingPoints < 0 ? "#dc2626" : "#059669", 
+                fontWeight: "700" 
+              }}>
+                النقاط المتبقية: {remainingPoints}
+              </span>
+            </div>
           )}
           <Link to="/store" style={{ textDecoration: "none" }}>
             <button style={{
@@ -354,15 +375,15 @@ export default function Cart({
             <button
               className="btn-primary"
               onClick={handleCheckout}
-              disabled={loading}
+              disabled={loading || remainingPoints < 0}
               style={{
                 padding: "12px 24px",
                 fontSize: "15px",
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? "not-allowed" : "pointer"
+                opacity: (loading || remainingPoints < 0) ? 0.6 : 1,
+                cursor: (loading || remainingPoints < 0) ? "not-allowed" : "pointer"
               }}
             >
-              {loading ? "جاري الإرسال..." : "تأكيد وإرسال الطلب ✨"}
+              {loading ? "جاري الإرسال..." : remainingPoints < 0 ? "النقاط لا تكفي" : "تأكيد وإرسال الطلب ✨"}
             </button>
           </div>
         </div>
