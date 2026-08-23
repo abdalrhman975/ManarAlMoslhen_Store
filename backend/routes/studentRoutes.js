@@ -16,7 +16,7 @@ router.post("/login", async (req, res) => {
 
     const student = await Student.findOne({ name: normalizedName, password });
     if (!student) return res.status(400).json({ message: "اسم الطالب أو كلمة المرور غير صحيحة" });
-    
+
     res.json(student);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -272,6 +272,23 @@ router.delete("/:id", async (req, res) => {
     await Student.findByIdAndDelete(studentId);
     await Order.deleteMany({ student: studentId });
     res.json({ message: "تم حذف الطالب وطلباته بنجاح" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ---------------------------------------------------------
+// 7. حذف جميع الطلاب وحذف كل طلباتهم
+// ---------------------------------------------------------
+router.delete("/", async (req, res) => {
+  try {
+    // 1. حذف جميع الطلاب من قاعدة البيانات
+    await Student.deleteMany({});
+
+    // 2. حذف كافة الطلبات المرتبطة بالطلاب
+    await Order.deleteMany({});
+
+    res.json({ message: "تم حذف جميع الطلاب وكافة الطلبات بنجاح" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

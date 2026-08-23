@@ -72,6 +72,13 @@ export const api = {
     return data;
   },
 
+  deleteAllStudents: async () => {
+    const res = await fetch(`${BASE_URL}/api/students`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "فشل حذف جميع الطلاب");
+    return data;
+  },
+
   // --- إدارة المنتجات ---
   getProducts: async (category = "All") => {
     try {

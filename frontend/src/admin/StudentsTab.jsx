@@ -77,6 +77,20 @@ export default function StudentsTab() {
     }
   }
 
+  async function handleDeleteAll() {
+    if (!students.length) return showToast("لا يوجد طلاب لحذفهم.", "warning");
+
+    if (!confirm("⚠️ تحذير: هل أنت متأكد تماماً من حذف جميع الطلاب؟ لا يمكن التراجع عن هذه الخطوة!")) return;
+
+    try {
+      await api.deleteAllStudents();
+      showToast("تم حذف جميع الطلاب بنجاح 🗑️", "success");
+      loadStudents();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  }
+
   // استيراد من ملف Excel
   function handleFileUpload(e) {
     const file = e.target.files[0];
@@ -409,6 +423,27 @@ export default function StudentsTab() {
               }}
             >
               📥 تصدير الطلاب إلى Excel
+            </button>
+
+            <button
+              onClick={handleDeleteAll}
+              disabled={students.length === 0}
+              style={{
+                background: students.length === 0 ? "#cbd5e1" : "#fef2f2",
+                color: students.length === 0 ? "#94a3b8" : "#dc2626",
+                border: students.length === 0 ? "1px solid #cbd5e1" : "1px solid #fecaca",
+                padding: "8px 16px",
+                borderRadius: "10px",
+                cursor: students.length === 0 ? "not-allowed" : "pointer",
+                fontWeight: "600",
+                fontSize: "13px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                transition: "all 0.2s ease"
+              }}
+            >
+              🗑️ حذف الجميع
             </button>
           </div>
         </div>
