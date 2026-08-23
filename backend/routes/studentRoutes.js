@@ -1,11 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-// ✅ إصلاح الاستيراد
 const { Student, normalizeName } = require("../models/Student");
 const Order = require("../models/Order");
 
-// دالة توليد كلمة سر عشوائية من 5 أرقام
 const generate5DigitPassword = () => Math.floor(10000 + Math.random() * 90000).toString();
 
 // ---------------------------------------------------------
@@ -77,16 +75,31 @@ router.post("/bulk", async (req, res) => {
 });
 
 // ---------------------------------------------------------
-// 🛒 مسارات السلة والمشتريات (Cart Operations)
+// 🛒 مسارات السلة (مُحدثة للتحقق من النقاط لمنع الرصيد بالسالب)
 // ---------------------------------------------------------
 
-// أ) إضافة منتج إلى سلة الطالب
+// أ) إضافة منتج إلى سلة الطالب مع فحص النقاط
 router.post("/:id/cart", async (req, res) => {
   try {
     const { productId, name, price, quantity = 1 } = req.body;
     const student = await Student.findById(req.params.id);
 
     if (!student) return res.status(404).json({ message: "الطالب غير موجود" });
+
+    // حساب المجموع الحالي في السلة
+    const currentCartTotal = student.cart.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    const addedCost = Number(price) * Number(quantity);
+
+    // 🛑 التحقق من عدم تجاوز النقاط المتاحة
+    if (currentCartTotal + addedCost > student.points) {
+      return res.status(400).json({
+        message: `لا يمكنك إضافة هذا المنتج! رصيدك (${student.points} نقطة) لا يكفي لإجمالي السلة (${currentCartTotal + addedCost} نقطة).`,
+      });
+    }
 
     const existingIndex = student.cart.findIndex(
       (item) => item.product?.toString() === productId || item.name === name
@@ -110,7 +123,7 @@ router.post("/:id/cart", async (req, res) => {
   }
 });
 
-// ب) تعديل كمية منتج في السلة (جديد)
+// ب) تعديل كمية منتج في السلة مع فحص النقاط
 router.put("/:id/cart/:itemId", async (req, res) => {
   try {
     const { quantity } = req.body;
@@ -121,10 +134,28 @@ router.put("/:id/cart/:itemId", async (req, res) => {
       (item) => item._id.toString() === req.params.itemId || item.product?.toString() === req.params.itemId
     );
 
-    if (itemIndex > -1) {
-      student.cart[itemIndex].quantity = Number(quantity);
-      await student.save();
+    if (itemIndex === -1) {
+      return res.status(404).json({ message: "المنتج غير موجود بالسلة" });
     }
+
+    // نسخ محتوى السلة واحتساب التكلفة الجديدة بالكمية المطلوبة
+    const updatedCart = [...student.cart];
+    updatedCart[itemIndex].quantity = Number(quantity);
+
+    const newTotal = updatedCart.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // 🛑 منع رفع الكمية إن تجاوزت النقاط
+    if (newTotal > student.points) {
+      return res.status(400).json({
+        message: `لا يمكن زيادة الكمية! المجموع الجديد (${newTotal} نقطة) يتجاوز رصيدك (${student.points} نقطة).`,
+      });
+    }
+
+    student.cart = updatedCart;
+    await student.save();
 
     res.json({ message: "تم تحديث الكمية بنجاح", cart: student.cart, student });
   } catch (err) {
@@ -176,14 +207,15 @@ router.post("/:id/checkout", async (req, res) => {
       return res.status(400).json({ message: "سلة المشتريات فارغة!" });
     }
 
-    const totalPrice = student.cart.reduce(
+    const calculatedTotal = student.cart.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
 
-    if (student.points < totalPrice) {
+    // 🛑 فحص حاسم للرصيد
+    if (student.points < calculatedTotal) {
       return res.status(400).json({
-        message: `رصيد النقاط لا يكفي! المجموع المطلوبة: ${totalPrice} نقطة، ورصيدك الحالي: ${student.points} نقطة`,
+        message: `رصيد النقاط لا يكفي! المجموع المطلوب: ${calculatedTotal} نقطة، ورصيدك الحالي: ${student.points} نقطة`,
       });
     }
 
@@ -195,12 +227,14 @@ router.post("/:id/checkout", async (req, res) => {
         price: item.price,
         quantity: item.quantity,
       })),
-      totalPrice: totalPrice,
+      totalPoints: calculatedTotal,
+      totalPrice: calculatedTotal,
       status: "pending",
     });
+
     await newOrder.save();
 
-    student.points -= totalPrice;
+    student.points -= calculatedTotal;
     student.cart = [];
     await student.save();
 
