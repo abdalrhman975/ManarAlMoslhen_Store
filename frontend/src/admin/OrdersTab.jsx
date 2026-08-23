@@ -11,7 +11,7 @@ export default function OrdersTab() {
 
   async function loadOrders() {
     const data = await api.getStudentSelections();
-    setOrders(data);
+    setOrders(data || []);
   }
 
   // تجميع الطلبات حسب الطالب
@@ -59,11 +59,11 @@ export default function OrdersTab() {
   }
 
   return (
-    <div style={{ background: "#ffffff", padding: "24px", borderRadius: "16px", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)" }}>
+    <div style={{ background: "#ffffff", padding: "16px", borderRadius: "16px", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)", boxSizing: "border-box", width: "100%" }}>
       {/* رأس التبويب والأزرار */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
-        <h3 style={{ margin: 0, color: "#1e293b", fontSize: "18px", fontWeight: "700" }}>
-          📋 طلبات الطلاب <span style={{ fontSize: "13px", color: "#64748b", fontWeight: "normal" }}>(انقر على اسم الطالب للتفاصيل)</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+        <h3 style={{ margin: 0, color: "#1e293b", fontSize: "16px", fontWeight: "700" }}>
+          📋 طلبات الطلاب <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", display: "block", marginTop: "2px" }}>(انقر على اسم الطالب للتفاصيل)</span>
         </h3>
         <button
           onClick={exportOrdersToExcel}
@@ -71,48 +71,53 @@ export default function OrdersTab() {
             background: "#16a34a",
             color: "white",
             border: "none",
-            padding: "10px 18px",
-            borderRadius: "10px",
+            padding: "8px 14px",
+            borderRadius: "8px",
             cursor: "pointer",
             fontWeight: "600",
-            fontSize: "14px",
+            fontSize: "13px",
             display: "flex",
             alignItems: "center",
-            gap: "8px",
+            gap: "6px",
             boxShadow: "0 2px 6px rgba(22, 163, 74, 0.2)",
-            transition: "all 0.2s ease"
+            width: "100%",
+            justifyContent: "center"
           }}
         >
           📥 تصدير الكل إلى Excel
         </button>
       </div>
 
-      {/* قائمة طلبات الطلاب الأكوردبيون */}
+      {/* قائمة طلبات الطلاب (الأكوردبيون) */}
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {Object.entries(groupedOrders).map(([studentId, group]) => {
           const isExpanded = expandedStudentId === studentId;
           return (
             <div key={studentId} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", transition: "all 0.2s ease" }}>
               {/* رأس بطاقة الطالب */}
+              {/* رأس بطاقة الطالب */}
               <div
                 onClick={() => toggleStudent(studentId)}
                 style={{
                   background: isExpanded ? "#fafbfc" : "#ffffff",
-                  padding: "14px 18px",
+                  padding: "14px 16px",
                   cursor: "pointer",
                   display: "flex",
-                  justifyContent: "space-between",
+                  justifyContent: "space-between", // يدفعهما على أطراف البطاقة
                   alignItems: "center",
                   userSelect: "none",
                   borderRight: isExpanded ? "4px solid #2DAFBB" : "4px solid transparent",
-                  transition: "all 0.2s ease"
+                  gap: "12px"
                 }}
               >
-                <div style={{ fontWeight: "700", fontSize: "15px", color: "#1e293b", display: "flex", alignItems: "center", gap: "8px" }}>
+                {/* الجهة اليمنى: اسم الطالب */}
+                <div style={{ fontWeight: "700", fontSize: "15px", color: "#1e293b", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
                   👤 {group.name}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <span style={{ fontSize: "13px", color: "#64748b", background: "#f8fafc", padding: "4px 12px", borderRadius: "20px", border: "1px solid #e2e8f0" }}>
+
+                {/* الجهة اليسرى: مجموع النقاط + السهم بمسافة واضحة */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+                  <span style={{ fontSize: "12px", color: "#64748b", background: "#f8fafc", padding: "4px 12px", borderRadius: "20px", border: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>
                     مجموع النقاط: <strong style={{ color: "#2DAFBB" }}>{group.totalSpent}</strong>
                   </span>
                   <span style={{ color: "#64748b", fontSize: "12px" }}>
@@ -121,70 +126,84 @@ export default function OrdersTab() {
                 </div>
               </div>
 
-              {/* جدول التفاصيل عند التوسيع */}
+              {/* تفاصيل الطلبات عند التوسيع (بدون جدول) */}
               {isExpanded && (
-                <div style={{ padding: "16px", background: "#ffffff", borderTop: "1px solid #f1f5f9" }}>
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0", textAlign: "right" }}>
-                      <thead>
-                        <tr style={{ background: "#f8fafc", fontSize: "13px", color: "#475569" }}>
-                          <th style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>المنتجات المطلوبة</th>
-                          <th style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>النقاط</th>
-                          <th style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>التاريخ</th>
-                          <th style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>الحالة</th>
-                          <th style={{ padding: "10px 14px", borderBottom: "1px solid #f1f5f9" }}>إجراء</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {group.orders.map((o) => (
-                          <tr key={o._id}>
-                            <td style={{ padding: "12px 14px", borderBottom: "1px solid #f1f5f9" }}>
-                              {o.items.map((item, idx) => (
-                                <span key={idx} style={{ display: "inline-block", background: "#f1f5f9", color: "#334155", padding: "4px 10px", borderRadius: "6px", margin: "2px", fontSize: "13px", fontWeight: "500" }}>
-                                  {item.name} × {item.quantity}
-                                </span>
-                              ))}
-                            </td>
-                            <td style={{ padding: "12px 14px", fontWeight: "700", color: "#2DAFBB", borderBottom: "1px solid #f1f5f9" }}>{o.totalPoints}</td>
-                            <td style={{ padding: "12px 14px", fontSize: "13px", color: "#64748b", borderBottom: "1px solid #f1f5f9" }}>
-                              {new Date(o.createdAt).toLocaleDateString("ar-EG")}
-                            </td>
-                            <td style={{ padding: "12px 14px", fontSize: "13px", borderBottom: "1px solid #f1f5f9" }}>
-                              {o.status === "delivered" ? (
-                                <span style={{ color: "#16a34a", fontWeight: "600", background: "#f0fdf4", padding: "4px 10px", borderRadius: "6px" }}>
-                                  ✅ تم التسليم
-                                </span>
-                              ) : (
-                                <span style={{ color: "#d97706", fontWeight: "600", background: "#fffbebe1", padding: "4px 10px", borderRadius: "6px" }}>
-                                  ⏳ قيد الانتظار
-                                </span>
-                              )}
-                            </td>
-                            <td style={{ padding: "12px 14px", borderBottom: "1px solid #f1f5f9" }}>
-                              {o.status !== "delivered" && (
-                                <button
-                                  onClick={() => handleToggleDeliver(o._id)}
-                                  style={{
-                                    background: "#2DAFBB",
-                                    color: "white",
-                                    border: "none",
-                                    padding: "6px 14px",
-                                    borderRadius: "8px",
-                                    cursor: "pointer",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    boxShadow: "0 2px 4px rgba(45, 175, 187, 0.2)"
-                                  }}
-                                >
-                                  تم التسليم
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                <div style={{ padding: "12px", background: "#f8fafc", borderTop: "1px solid #f1f5f9", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {group.orders.map((o) => (
+                    <div
+                      key={o._id}
+                      style={{
+                        background: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "10px",
+                        padding: "12px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+                      }}
+                    >
+                      {/* قائمة المنتجات */}
+                      <div style={{ marginBottom: "10px" }}>
+                        <span style={{ fontSize: "11px", color: "#64748b", display: "block", marginBottom: "6px", fontWeight: "600" }}>
+                          المنتجات المطلوبة:
+                        </span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                          {o.items.map((item, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                background: "#f1f5f9",
+                                color: "#334155",
+                                padding: "4px 8px",
+                                borderRadius: "6px",
+                                fontSize: "12px",
+                                fontWeight: "500",
+                                border: "1px solid #e2e8f0"
+                              }}
+                            >
+                              {item.name} <b style={{ color: "#0284c7" }}>× {item.quantity}</b>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* البيانات السفلية (النقاط + التاريخ) */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", fontSize: "12px", color: "#475569" }}>
+                        <span>النقاط: <strong style={{ color: "#2DAFBB" }}>{o.totalPoints}</strong></span>
+                        <span>📅 {new Date(o.createdAt).toLocaleDateString("ar-EG")}</span>
+                      </div>
+
+                      {/* الحالة والإجراء */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "8px", borderTop: "1px dashed #f1f5f9" }}>
+                        {o.status === "delivered" ? (
+                          <span style={{ color: "#16a34a", fontWeight: "600", background: "#f0fdf4", padding: "4px 8px", borderRadius: "6px", fontSize: "12px" }}>
+                            ✅ تم التسليم
+                          </span>
+                        ) : (
+                          <span style={{ color: "#d97706", fontWeight: "600", background: "#fffbebe1", padding: "4px 8px", borderRadius: "6px", fontSize: "12px" }}>
+                            ⏳ قيد الانتظار
+                          </span>
+                        )}
+
+                        {o.status !== "delivered" && (
+                          <button
+                            onClick={() => handleToggleDeliver(o._id)}
+                            style={{
+                              background: "#2DAFBB",
+                              color: "white",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              boxShadow: "0 2px 4px rgba(45, 175, 187, 0.2)"
+                            }}
+                          >
+                            تم التسليم
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

@@ -15,32 +15,21 @@ export default function Cart({
   const [lastOrder, setLastOrder] = useState(null);
   const [orderHistory, setOrderHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  
-  // حالة الإشعار الاحترافي (Toast)
   const [toast, setToast] = useState(null);
 
   const navigate = useNavigate();
 
-  // اعتماد السلة المزامنة من بيانات الطالب بالداتابيز أولاً، ثم الـ Prop
   const currentCart = student?.cart || cart || [];
-  
-  // حساب مجموع نقاط السلة الحالية
   const totalPoints = currentCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  // 💡 حساب النقاط المتبقية حياً (تتحدث فورياً عند تغيير السلة)
   const remainingPoints = (student?.points || 0) - totalPoints;
 
-  // جلب تاريخ الطلبات عند تحميل الصفحة
   useEffect(() => {
     fetchOrderHistory();
   }, [student?._id, student?.id]);
 
-  // إخفاء الإشعار تلقائياً بعد 3.5 ثانية
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => {
-      setToast(null);
-    }, 3500);
+    const timer = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -72,7 +61,6 @@ export default function Cart({
       return;
     }
 
-    // 🛑 فحص قبل الزيادة: هل الرصيد المتبقي يسمح بزيادة الكمية؟
     if (delta > 0 && remainingPoints < (currentCart.find(i => (i.productId || i._id) === productId)?.price || 0)) {
       showToast("رصيد نقاطك المتبقي لا يكفي لزيادة الكمية!", "warning");
       return;
@@ -160,113 +148,84 @@ export default function Cart({
   }
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px 16px", position: "relative" }}>
+    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "16px", position: "relative", boxSizing: "border-box" }}>
       
-      {/* 🔔 الإشعار الاحترافي العائم (Toast Notification) */}
+      {/* 🔔 الإشعار الاحترافي */}
       {toast && (
         <div style={{
           position: "fixed",
-          top: "24px",
+          top: "20px",
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 9999,
           display: "flex",
           alignItems: "center",
           gap: "12px",
-          padding: "14px 22px",
-          borderRadius: "14px",
-          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+          padding: "12px 20px",
+          borderRadius: "12px",
+          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
           background: toast.type === "success" ? "#059669" : "#dc2626",
           color: "#ffffff",
           fontWeight: "600",
-          fontSize: "15px",
-          animation: "toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
-          minWidth: "300px",
-          maxWidth: "90%",
-          justifyContent: "space-between"
+          fontSize: "14px",
+          width: "90%",
+          maxWidth: "400px",
+          justifyBetween: "space-between"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "18px" }}>
-              {toast.type === "success" ? "✅" : "⚠️"}
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span>{toast.type === "success" ? "✅" : "⚠️"}</span>
             <span>{toast.message}</span>
           </div>
-
-          <button
-            onClick={() => setToast(null)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "white",
-              fontSize: "18px",
-              cursor: "pointer",
-              padding: "0 4px",
-              lineHeight: "1",
-              opacity: 0.8
-            }}
-          >
-            ✕
-          </button>
+          <button onClick={() => setToast(null)} style={{ background: "none", border: "none", color: "white", cursor: "pointer" }}>✕</button>
         </div>
       )}
 
-      {/* حركة أنيميشن الإشعار */}
-      <style>{`
-        @keyframes toastIn {
-          from {
-            opacity: 0;
-            transform: translate(-50%, -20px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translate(-50%, 0) scale(1);
-          }
-        }
-      `}</style>
-
-      {/* Header */}
+      {/* Header المحدث */}
       <div style={{
         display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
+        flexDirection: "column",
+        gap: "12px",
         marginBottom: "20px",
-        background: "var(--surface)",
-        padding: "16px 20px",
-        borderRadius: "var(--radius-lg)",
-        border: "1px solid var(--border-color)",
-        boxShadow: "var(--shadow-sm)"
+        background: "white",
+        padding: "16px",
+        borderRadius: "16px",
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
       }}>
-        <h2 style={{ margin: 0, fontSize: "20px", color: "var(--text-primary)" }}>🛒 سلة التسوق</h2>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          {student && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-              <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                الرصيد الكلي: {student.points || 0}
-              </span>
-              {/* 💡 يظهر المتبقي باللون الأحادي، ولو وصل للسالب يظهر باللون الأحمر تحذيراً */}
-              <span style={{ 
-                fontSize: "15px", 
-                color: remainingPoints < 0 ? "#dc2626" : "#059669", 
-                fontWeight: "700" 
-              }}>
-                النقاط المتبقية: {remainingPoints}
-              </span>
-            </div>
-          )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 style={{ margin: 0, fontSize: "18px", color: "#1e293b", fontWeight: "700" }}>🛒 سلة التسوق</h2>
           <Link to="/store" style={{ textDecoration: "none" }}>
             <button style={{
-              background: "var(--bg-main)",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--border-color)",
-              padding: "8px 16px",
-              borderRadius: "var(--radius-sm)",
+              background: "#f1f5f9",
+              color: "#475569",
+              border: "none",
+              padding: "6px 14px",
+              borderRadius: "8px",
               fontWeight: "600",
+              fontSize: "13px",
               cursor: "pointer"
             }}>
               العودة للسوق
             </button>
           </Link>
         </div>
+
+        {student && (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "10px 14px",
+            background: "#f8fafc",
+            borderRadius: "10px",
+            fontSize: "13px"
+          }}>
+            <span style={{ color: "#64748b" }}>الرصيد الكلي: <strong>{student.points || 0}</strong></span>
+            <span style={{ color: remainingPoints < 0 ? "#dc2626" : "#059669", fontWeight: "700" }}>
+              المتبقي: {remainingPoints} نقطة
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Error Notice */}
@@ -275,112 +234,111 @@ export default function Cart({
           color: "#dc2626",
           background: "#fef2f2",
           border: "1px solid #fecaca",
-          padding: "12px 16px",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "20px",
+          padding: "10px",
+          borderRadius: "10px",
+          marginBottom: "16px",
           fontWeight: "600",
-          textAlign: "center"
+          textAlign: "center",
+          fontSize: "13px"
         }}>
           ⚠️ {error}
         </div>
       )}
 
-      {/* Cart Content */}
+      {/* Cart Content (Cards instead of Table) */}
       {currentCart.length === 0 ? (
         <div style={{
-          background: "var(--surface)",
-          padding: "40px 24px",
-          borderRadius: "var(--radius-lg)",
+          background: "white",
+          padding: "40px 20px",
+          borderRadius: "16px",
           textAlign: "center",
-          border: "1px solid var(--border-color)",
-          boxShadow: "var(--shadow-sm)",
-          marginBottom: "24px"
+          border: "1px solid #e2e8f0"
         }}>
-          <p style={{ fontSize: "40px", margin: "0 0 12px 0" }}>🛍️</p>
-          <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "16px", fontWeight: "600" }}>
+          <p style={{ fontSize: "36px", margin: "0 0 8px 0" }}>🛍️</p>
+          <p style={{ margin: 0, color: "#64748b", fontSize: "15px", fontWeight: "600" }}>
             السلة فارغة حالياً
           </p>
         </div>
       ) : (
-        <div style={{
-          background: "var(--surface)",
-          borderRadius: "var(--radius-lg)",
-          border: "1px solid var(--border-color)",
-          padding: "20px",
-          boxShadow: "var(--shadow-sm)",
-          marginBottom: "24px"
-        }}>
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>الصنف</th>
-                <th style={{ textAlign: "center" }}>الكمية</th>
-                <th>الإجمالي</th>
-                <th style={{ textAlign: "center" }}>إجراء</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentCart.map((item) => (
-                <tr key={item.productId || item._id}>
-                  <td style={{ fontWeight: "600" }}>{item.name}</td>
-                  <td style={{ textAlign: "center" }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--bg-main)", padding: "4px 8px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
-                      <button onClick={() => handleQuantityChange(item.productId || item._id, item.quantity, -1)} style={{ borderRadius: "4px", border: "1px solid var(--border-color)", background: "white", cursor: "pointer", padding: "2px 6px", fontWeight: "bold" }}>➖</button>
-                      <span style={{ fontWeight: "700" }}>{item.quantity}</span>
-                      <button onClick={() => handleQuantityChange(item.productId || item._id, item.quantity, 1)} style={{ borderRadius: "4px", border: "1px solid var(--border-color)", background: "white", cursor: "pointer", padding: "2px 6px", fontWeight: "bold" }}>➕</button>
-                    </div>
-                  </td>
-                  <td style={{ color: "var(--accent)", fontWeight: "700" }}>
-                    {item.price * item.quantity} نقطة
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <button
-                      onClick={() => handleRemoveItem(item.productId || item._id)}
-                      style={{
-                        background: "#fef2f2",
-                        color: "#dc2626",
-                        border: "1px solid #fecaca",
-                        padding: "6px 12px",
-                        borderRadius: "var(--radius-sm)",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "13px"
-                      }}
-                    >
-                      حذف
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
+          {currentCart.map((item) => (
+            <div key={item.productId || item._id} style={{
+              background: "white",
+              borderRadius: "14px",
+              border: "1px solid #e2e8f0",
+              padding: "14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.02)"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: "700", fontSize: "15px", color: "#1e293b" }}>{item.name}</span>
+                <span style={{ color: "#2DAFBB", fontWeight: "700", fontSize: "14px" }}>
+                  {item.price * item.quantity} نقطة
+                </span>
+              </div>
 
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "8px", borderTop: "1px dashed #f1f5f9" }}>
+                {/* عداد الكمية */}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "#f8fafc", padding: "4px 10px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                  <button onClick={() => handleQuantityChange(item.productId || item._id, item.quantity, -1)} style={{ border: "none", background: "white", cursor: "pointer", borderRadius: "4px", padding: "2px 8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", fontWeight: "bold" }}>➖</button>
+                  <span style={{ fontWeight: "700", fontSize: "14px" }}>{item.quantity}</span>
+                  <button onClick={() => handleQuantityChange(item.productId || item._id, item.quantity, 1)} style={{ border: "none", background: "white", cursor: "pointer", borderRadius: "4px", padding: "2px 8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", fontWeight: "bold" }}>➕</button>
+                </div>
+
+                {/* زر الحذف */}
+                <button
+                  onClick={() => handleRemoveItem(item.productId || item._id)}
+                  style={{
+                    background: "#fef2f2",
+                    color: "#dc2626",
+                    border: "1px solid #fecaca",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "12px"
+                  }}
+                >
+                  حذف
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Checkout Bar */}
           <div style={{
+            background: "white",
+            padding: "16px",
+            borderRadius: "14px",
+            border: "1px solid #e2e8f0",
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: "24px",
-            paddingTop: "16px",
-            borderTop: "1px solid var(--border-color)",
-            flexWrap: "wrap",
-            gap: "16px"
+            flexDirection: "column",
+            gap: "12px",
+            marginTop: "8px"
           }}>
-            <div>
-              <span style={{ color: "var(--text-secondary)", fontSize: "14px" }}>الإجمالي الكلي:</span>
-              <h3 style={{ margin: "4px 0 0 0", color: "var(--accent)", fontSize: "22px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "#64748b", fontSize: "14px" }}>الإجمالي الكلي:</span>
+              <h3 style={{ margin: 0, color: "#2DAFBB", fontSize: "20px" }}>
                 {totalPoints} نقطة
               </h3>
             </div>
 
             <button
-              className="btn-primary"
               onClick={handleCheckout}
               disabled={loading || remainingPoints < 0}
               style={{
-                padding: "12px 24px",
+                width: "100%",
+                padding: "12px",
                 fontSize: "15px",
-                opacity: (loading || remainingPoints < 0) ? 0.6 : 1,
-                cursor: (loading || remainingPoints < 0) ? "not-allowed" : "pointer"
+                background: remainingPoints < 0 ? "#cbd5e1" : "linear-gradient(135deg, #2DAFBB 0%, #1C9BBB 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: "10px",
+                fontWeight: "bold",
+                cursor: (loading || remainingPoints < 0) ? "not-allowed" : "pointer",
+                transition: "all 0.2s"
               }}
             >
               {loading ? "جاري الإرسال..." : remainingPoints < 0 ? "النقاط لا تكفي" : "تأكيد وإرسال الطلب ✨"}
@@ -389,106 +347,47 @@ export default function Cart({
         </div>
       )}
 
-      {/* قسم المشتريات الأخيرة */}
+      {/* تاريخ المشتريات */}
       {(lastOrder || orderHistory.length > 0) && (
         <div style={{ marginTop: "24px" }}>
-          <h3 style={{ 
-            color: "var(--text-primary)", 
-            fontSize: "18px", 
-            marginBottom: "16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px"
-          }}>
-            📋 تاريخ المشتريات
-            <span style={{ fontSize: "14px", color: "var(--text-secondary)", fontWeight: "normal" }}>
-              ({orderHistory.length} طلب)
-            </span>
+          <h3 style={{ color: "#1e293b", fontSize: "16px", marginBottom: "12px" }}>
+            📋 تاريخ المشتريات ({orderHistory.length})
           </h3>
 
-          {loadingHistory && (
-            <div style={{ textAlign: "center", padding: "20px" }}>
-              جاري تحميل تاريخ المشتريات...
-            </div>
-          )}
+          {loadingHistory && <div style={{ textAlign: "center", padding: "12px", fontSize: "13px" }}>جاري التحميل...</div>}
 
           {orderHistory.map((order, index) => (
             <div
               key={order.orderId || order._id || index}
               style={{
-                background: index === 0 && lastOrder ? "#f0fdf4" : "var(--surface)",
-                border: index === 0 && lastOrder ? "2px solid #bbf7d0" : "1px solid var(--border-color)",
-                borderRadius: "var(--radius-lg)",
-                padding: "16px 20px",
-                marginBottom: "12px",
-                boxShadow: "var(--shadow-sm)"
+                background: index === 0 && lastOrder ? "#f0fdf4" : "white",
+                border: index === 0 && lastOrder ? "1.5px solid #bbf7d0" : "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "12px 14px",
+                marginBottom: "10px"
               }}
             >
-              <div style={{ 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center", 
-                marginBottom: "12px",
-                flexWrap: "wrap",
-                gap: "8px"
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  {index === 0 && lastOrder && (
-                    <span style={{
-                      background: "#22c55e",
-                      color: "white",
-                      padding: "2px 12px",
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      fontWeight: "700"
-                    }}>
-                      ✔ تم الآن
-                    </span>
-                  )}
-                  <span style={{ fontWeight: "600", color: "var(--text-primary)" }}>
-                    طلب #{orderHistory.length - index}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ fontWeight: "600", fontSize: "13px", color: "#334155" }}>طلب #{orderHistory.length - index}</span>
+                {index === 0 && lastOrder && (
+                  <span style={{ background: "#22c55e", color: "white", padding: "2px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: "bold" }}>
+                    تم الآن
                   </span>
-                </div>
+                )}
               </div>
 
-              <div style={{ 
-                display: "grid", 
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                gap: "8px",
-                marginBottom: "8px"
-              }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "8px" }}>
                 {order.items?.map((item, idx) => (
-                  <div
-                    key={item.productId || idx}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "6px 12px",
-                      background: "var(--bg-main)",
-                      borderRadius: "var(--radius-sm)",
-                      border: "1px solid var(--border-color)"
-                    }}
-                  >
-                    <span style={{ fontWeight: "600" }}>{item.name}</span>
-                    <span style={{ color: "var(--text-secondary)" }}>
-                      {item.quantity} × {item.price}
-                    </span>
+                  <div key={item.productId || idx} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", background: "#f8fafc", borderRadius: "6px", fontSize: "12px" }}>
+                    <span>{item.name}</span>
+                    <span style={{ color: "#64748b" }}>{item.quantity} × {item.price}</span>
                   </div>
                 ))}
               </div>
 
-              <div style={{ 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center",
-                marginTop: "10px",
-                paddingTop: "10px",
-                borderTop: "1px dashed var(--border-color)"
-              }}>
-                <span style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
-                  إجمالي الطلب
-                </span>
-                <span style={{ fontWeight: "700", color: "var(--accent)", fontSize: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "6px", borderTop: "1px dashed #e2e8f0", fontSize: "13px" }}>
+                <span style={{ color: "#64748b" }}>الإجمالي:</span>
+                <span style={{ fontWeight: "700", color: "#2DAFBB" }}>
                   {order.total || order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0)} نقطة
                 </span>
               </div>
