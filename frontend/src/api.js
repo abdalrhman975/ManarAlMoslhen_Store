@@ -72,7 +72,7 @@ export const api = {
     return data;
   },
 
-  // --- إدارة المنتجات (مع الصور) ---
+  // --- إدارة المنتجات ---
   getProducts: async (category = "All") => {
     try {
       const url = category && category !== "All"
@@ -125,7 +125,7 @@ export const api = {
     return data;
   },
 
-  // --- إدارة سلة التسوق (Cart API) ---
+  // --- إدارة سلة التسوق ---
   addToCart: async (studentId, item) => {
     const res = await fetch(`${BASE_URL}/api/students/${studentId}/cart`, {
       method: "POST",
@@ -166,12 +166,12 @@ export const api = {
     return data;
   },
 
-  // --- إدارة الطلبات والتسوق ---
+  // --- إدارة الطلبات والتسوق (مُعدّلة) ---
   submitOrder: async (studentId, items) => {
-    const res = await fetch(`${BASE_URL}/api/orders`, {
+    const res = await fetch(`${BASE_URL}/api/students/${studentId}/checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId, items }),
+      body: JSON.stringify({ items }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "فشلت عملية إرسال الطلب");
@@ -207,7 +207,6 @@ export const api = {
     }
   },
 
-  // --- إدارة الكميات ---
   getQuantities: async () => {
     const res = await fetch(`${BASE_URL}/api/orders/quantities`);
     return res.json();

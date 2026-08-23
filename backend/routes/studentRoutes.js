@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+
+// ✅ إصلاح الاستيراد
 const { Student, normalizeName } = require("../models/Student");
 const Order = require("../models/Order");
 
@@ -7,13 +9,11 @@ const Order = require("../models/Order");
 const generate5DigitPassword = () => Math.floor(10000 + Math.random() * 90000).toString();
 
 // ---------------------------------------------------------
-// 1. تسجيل الدخول (مع تنظيف الاسم قبل البحث)
+// 1. تسجيل الدخول
 // ---------------------------------------------------------
 router.post("/login", async (req, res) => {
   try {
     const { name, password } = req.body;
-    
-    // توحيد الاسم المدخل ليطابق ما هو مخزن في قاعدة البيانات
     const normalizedName = normalizeName(name);
 
     const student = await Student.findOne({ name: normalizedName, password });
@@ -88,7 +88,6 @@ router.post("/:id/cart", async (req, res) => {
 
     if (!student) return res.status(404).json({ message: "الطالب غير موجود" });
 
-    // التحقق مما إذا كان المنتج موجوداً مسبقاً في السلة للزيادة على الكمية
     const existingIndex = student.cart.findIndex(
       (item) => item.product?.toString() === productId || item.name === name
     );
@@ -111,13 +110,37 @@ router.post("/:id/cart", async (req, res) => {
   }
 });
 
-// ب) حذف منتج محدد من سلة الطالب
+// ب) تعديل كمية منتج في السلة (جديد)
+router.put("/:id/cart/:itemId", async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ message: "الطالب غير موجود" });
+
+    const itemIndex = student.cart.findIndex(
+      (item) => item._id.toString() === req.params.itemId || item.product?.toString() === req.params.itemId
+    );
+
+    if (itemIndex > -1) {
+      student.cart[itemIndex].quantity = Number(quantity);
+      await student.save();
+    }
+
+    res.json({ message: "تم تحديث الكمية بنجاح", cart: student.cart, student });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ج) حذف منتج محدد من سلة الطالب
 router.delete("/:id/cart/:itemId", async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
     if (!student) return res.status(404).json({ message: "الطالب غير موجود" });
 
-    student.cart = student.cart.filter((item) => item._id.toString() !== req.params.itemId);
+    student.cart = student.cart.filter(
+      (item) => item._id.toString() !== req.params.itemId && item.product?.toString() !== req.params.itemId
+    );
     await student.save();
 
     res.json({ message: "تم حذف المنتج من السلة", cart: student.cart, student });
@@ -126,7 +149,7 @@ router.delete("/:id/cart/:itemId", async (req, res) => {
   }
 });
 
-// ج) تفريغ السلة بالكامل
+// د) تفريغ السلة بالكامل
 router.delete("/:id/cart", async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
@@ -142,7 +165,7 @@ router.delete("/:id/cart", async (req, res) => {
 });
 
 // ---------------------------------------------------------
-// 🚀 تأكيد الطلب (Checkout): نقل المشتريات إلى جدول Order
+// 🚀 تأكيد الطلب (Checkout)
 // ---------------------------------------------------------
 router.post("/:id/checkout", async (req, res) => {
   try {
@@ -153,20 +176,17 @@ router.post("/:id/checkout", async (req, res) => {
       return res.status(400).json({ message: "سلة المشتريات فارغة!" });
     }
 
-    // حساب إجمالي نقاط المشتريات
     const totalPrice = student.cart.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
 
-    // التأكد من كفاية نقاط الطالب
     if (student.points < totalPrice) {
       return res.status(400).json({
         message: `رصيد النقاط لا يكفي! المجموع المطلوبة: ${totalPrice} نقطة، ورصيدك الحالي: ${student.points} نقطة`,
       });
     }
 
-    // 1. إنشاء طلب جديد في جدول الطلبات Order
     const newOrder = new Order({
       student: student._id,
       items: student.cart.map((item) => ({
@@ -180,7 +200,6 @@ router.post("/:id/checkout", async (req, res) => {
     });
     await newOrder.save();
 
-    // 2. خصم النقاط وتفريغ سلة الطالب
     student.points -= totalPrice;
     student.cart = [];
     await student.save();
@@ -200,7 +219,6 @@ router.post("/:id/checkout", async (req, res) => {
 // ---------------------------------------------------------
 router.put("/:id", async (req, res) => {
   try {
-    // نضمن تطبيق normalizeName في حال تم تعديل الاسم عبر findByIdAndUpdate
     if (req.body.name) {
       req.body.name = normalizeName(req.body.name);
     }
