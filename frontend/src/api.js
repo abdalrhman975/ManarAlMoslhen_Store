@@ -88,7 +88,7 @@ export const api = {
   },
 
   bulkCreateProducts: async (ProductsArray) => {
-    const res = await fetch(`${BASE_URL}/api/products/bulk`, { // 👈 تم التعديل إلى /api/products/bulk
+    const res = await fetch(`${BASE_URL}/api/products/bulk`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ProductsArray),
@@ -97,7 +97,6 @@ export const api = {
     if (!res.ok) throw new Error(data.message || "فشل استيراد المنتجات");
     return data;
   },
-
 
   createProduct: async (formData) => {
     const res = await fetch(`${BASE_URL}/api/products`, {
@@ -123,6 +122,47 @@ export const api = {
     const res = await fetch(`${BASE_URL}/api/products/${id}`, { method: "DELETE" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "فشل حذف المنتج");
+    return data;
+  },
+
+  // --- إدارة سلة التسوق (Cart API) ---
+  addToCart: async (studentId, item) => {
+    const res = await fetch(`${BASE_URL}/api/students/${studentId}/cart`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(item),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "فشلت إضافة المنتج للسلة");
+    return data;
+  },
+
+  updateCartQuantity: async (studentId, productId, quantity) => {
+    const res = await fetch(`${BASE_URL}/api/students/${studentId}/cart/${productId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quantity }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "فشل تعديل الكمية في السلة");
+    return data;
+  },
+
+  removeFromCart: async (studentId, productId) => {
+    const res = await fetch(`${BASE_URL}/api/students/${studentId}/cart/${productId}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "فشلت إزالة المنتج من السلة");
+    return data;
+  },
+
+  clearCart: async (studentId) => {
+    const res = await fetch(`${BASE_URL}/api/students/${studentId}/cart`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "فشل تفريغ السلة");
     return data;
   },
 

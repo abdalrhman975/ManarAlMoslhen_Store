@@ -4,31 +4,79 @@ import { api } from "../api.js";
 
 const CATEGORIES = ["All", "لعبة", "كتاب", "قرطاسية", "إلكترونيات", "أخرى"];
 
-export default function Market({ student, setStudent, onLogout, cart, addToCart }) {
+export default function Market({ student, setStudent, onLogout, cart = [], addToCart }) {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState("All");
   const [quantities, setQuantities] = useState({});
-  const [warning, setWarning] = useState("");
+  const [loadingId, setLoadingId] = useState(null); // لمعرفة المنتج القيد والإضافة
+
+  // حالة الإشعار الاحترافي (Toast)
+  const [toast, setToast] = useState(null); // { message, type: 'success' | 'warning' }
 
   useEffect(() => {
     api.getProducts(category).then(setProducts);
   }, [category]);
 
-  const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
-  const cartTotalPoints = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const remainingPoints = student.points - cartTotalPoints;
+  // إخفاء الإشعار تلقائياً بعد 3.5 ثانية
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
+
+  // اعتماد السلة من بيانات الطالب في السيرفر أولاً ثم الـ Prop
+  const currentCart = student?.cart || cart || [];
+  const cartCount = currentCart.reduce((sum, i) => sum + i.quantity, 0);
+  const cartTotalPoints = currentCart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+  const remainingPoints = (student?.points || 0) - cartTotalPoints;
 
   const qty = (id) => quantities[id] ?? 1;
   const setQty = (id, val) => setQuantities((prev) => ({ ...prev, [id]: Math.max(1, val) }));
 
-  function handleAddToCart(product, quantity) {
-    setWarning("");
+  // 🛒 إضافة المنتج إلى سلة الطالب في قاعدة البيانات
+  async function handleAddToCart(product, quantity) {
     const itemCost = product.price * quantity;
+    
+    // 1. حالة عدم كفاية الرصيد
     if (remainingPoints < itemCost) {
-      setWarning(`عذراً، رصيدك المتاح (${remainingPoints} نقطة) لا يكفي لإضافة هذا المنتج.`);
+      showToast(
+        `عذراً، رصيدك المتاح (${remainingPoints} نقطة) لا يكفي لإضافة هذا المنتج.`,
+        "warning"
+      );
       return;
     }
-    addToCart(product, quantity);
+
+    try {
+      setLoadingId(product._id);
+
+      // استدعاء API Backend لإضافة المنتج لسلة الطالب
+      const res = await api.addToCart(student._id, {
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity,
+      });
+
+      // تحديث حالة الطالب ببيانات السلة الجديدة الجاية من السيرفر
+      if (res.student) {
+        setStudent(res.student);
+        localStorage.setItem("mosque_student", JSON.stringify(res.student));
+      } else if (addToCart) {
+        addToCart(product, quantity);
+      }
+
+      showToast(`تمت إضافة "${product.name}" (${quantity}) إلى السلة بنجاح! 🛒`, "success");
+    } catch (err) {
+      showToast(err.message || "حدث خطأ أثناء إضافة المنتج إلى السلة", "warning");
+    } finally {
+      setLoadingId(null);
+    }
   }
 
   function getImageUrl(imageUrl) {
@@ -36,23 +84,83 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
     const cleanUrl = imageUrl.trim();
     if (!cleanUrl) return null;
 
-    // إذا كان الرابط مساراً نسبيًا يبدأ بـ /uploads
     if (cleanUrl.startsWith("/uploads")) {
       return `https://manaralmoslhen-store.onrender.com${cleanUrl}`;
     }
 
-    // إذا كان رابطاً كاملاً قديم يحتوي على localhost، استبدل النطاق لبيئة الإنتاج
     if (cleanUrl.includes("/uploads/")) {
       const filename = cleanUrl.split("/uploads/")[1];
       return `https://manaralmoslhen-store.onrender.com/uploads/${filename}`;
     }
 
-    // إذا كان رابط صورة خارجي كامل (http/https)
     return cleanUrl;
   }
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px 16px" }}>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px 16px", position: "relative" }}>
+      
+      {/* 🔔 الإشعار الاحترافي العائم (Toast Notification) */}
+      {toast && (
+        <div style={{
+          position: "fixed",
+          top: "24px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "14px 22px",
+          borderRadius: "14px",
+          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+          background: toast.type === "success" ? "#059669" : "#dc2626",
+          color: "#ffffff",
+          fontWeight: "600",
+          fontSize: "15px",
+          animation: "toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          minWidth: "300px",
+          maxWidth: "90%",
+          justifyInContent: "space-between" 
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "18px" }}>
+              {toast.type === "success" ? "✅" : "⚠️"}
+            </span>
+            <span>{toast.message}</span>
+          </div>
+
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "white",
+              fontSize: "18px",
+              cursor: "pointer",
+              padding: "0 4px",
+              lineHeight: "1",
+              opacity: 0.8
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* إضافة حركات CSS للإشعار */}
+      <style>{`
+        @keyframes toastIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0) scale(1);
+          }
+        }
+      `}</style>
+
       {/* Header / Topbar */}
       <div style={{
         display: "flex",
@@ -71,7 +179,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
         {/* القسم الأيسر: ترحيب + رصيد */}
         <div style={{ flex: "1", minWidth: "150px" }}>
           <h2 style={{ margin: 0, fontSize: "18px", color: "white" }}>
-            أهلاً بك، {student.name} 👋
+            أهلاً بك، {student?.name} 👋
           </h2>
           <span style={{ fontSize: "14px", color: "#f8fafc" }}>
             الرصيد المتاح: <strong style={{ fontSize: "18px", color: "#EBC250" }}>{remainingPoints} نقطة</strong>
@@ -132,7 +240,8 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
                 padding: "2px 10px",
                 borderRadius: "10px",
                 fontSize: "12px",
-                fontWeight: "bold"
+                fontWeight: "bold",
+                background: "white"
               }}>
                 {cartCount}
               </span>
@@ -168,12 +277,6 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
         </div>
       </div>
 
-      {warning && (
-        <div style={{ background: "#fef2f2", color: "#dc2626", padding: "14px", borderRadius: "12px", marginBottom: "20px", border: "1px solid #fecaca", fontWeight: "600" }}>
-          ⚠️ {warning}
-        </div>
-      )}
-
       {/* Categories Filter */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "24px", overflowX: "auto", paddingBottom: "4px" }}>
         {CATEGORIES.map((c) => (
@@ -204,6 +307,8 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "20px" }}>
         {products.map((p) => {
           const imageUrl = getImageUrl(p.imageUrl);
+          const isAdding = loadingId === p._id;
+
           return (
             <div key={p._id} style={{
               background: "#ffffff",
@@ -224,7 +329,7 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
                     style={{
                       width: "100%",
                       height: "160px",
-                      objectFit: "contain", 
+                      objectFit: "contain",
                       borderRadius: "10px",
                       marginBottom: "12px",
                       background: "#f8fafc",
@@ -279,21 +384,22 @@ export default function Market({ student, setStudent, onLogout, cart, addToCart 
                 </div>
 
                 <button
+                  disabled={isAdding}
                   onClick={() => handleAddToCart(p, qty(p._id))}
                   style={{
                     width: "100%",
                     padding: "10px",
                     borderRadius: "10px",
                     border: "none",
-                    background: "#2DAFBB",
+                    background: isAdding ? "#94a3b8" : "#2DAFBB",
                     color: "white",
                     fontWeight: "600",
                     fontSize: "14px",
-                    cursor: "pointer",
+                    cursor: isAdding ? "not-allowed" : "pointer",
                     boxShadow: "0 2px 6px rgba(45, 175, 187, 0.2)"
                   }}
                 >
-                  أضف للسلة
+                  {isAdding ? "جاري الإضافة..." : "أضف للسلة"}
                 </button>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { api } from "../api.js";
 export default function Cart({ 
   student, 
   setStudent, 
-  cart, 
+  cart = [], 
   removeFromCart, 
   clearCart, 
   updateQuantity 
@@ -13,23 +13,42 @@ export default function Cart({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [lastOrder, setLastOrder] = useState(null);
-  const [orderHistory, setOrderHistory] = useState([]); // تاريخ الطلبات
+  const [orderHistory, setOrderHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  
+  // حالة الإشعار الاحترافي (Toast)
+  const [toast, setToast] = useState(null);
+
   const navigate = useNavigate();
 
-  const totalPoints = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // اعتماد السلة المزامنة من بيانات الطالب بالداتابيز أولاً، ثم الـ Prop
+  const currentCart = student?.cart || cart || [];
+  const totalPoints = currentCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // جلب تاريخ الطلبات عند تحميل الصفحة
   useEffect(() => {
     fetchOrderHistory();
-  }, [student]);
+  }, [student?._id, student?.id]);
+
+  // إخفاء الإشعار تلقائياً بعد 3.5 ثانية
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
 
   async function fetchOrderHistory() {
-    if (!student?._id && !student?.id) return;
+    const studentId = student?._id || student?.id;
+    if (!studentId) return;
     
     setLoadingHistory(true);
     try {
-      const studentId = student?._id || student?.id;
       const orders = await api.getStudentOrders(studentId);
       setOrderHistory(orders || []);
     } catch (err) {
@@ -39,32 +58,70 @@ export default function Cart({
     }
   }
 
-  function handleQuantityChange(productId, currentQty, delta) {
+  async function handleQuantityChange(productId, currentQty, delta) {
     const newQty = currentQty + delta;
+    const studentId = student?._id || student?.id;
+
     if (newQty <= 0) {
-      removeFromCart(productId);
-    } else if (updateQuantity) {
-      updateQuantity(productId, newQty);
+      await handleRemoveItem(productId);
+      return;
+    }
+
+    try {
+      if (api.updateCartQuantity && studentId) {
+        const res = await api.updateCartQuantity(studentId, productId, newQty);
+        if (res?.student) {
+          setStudent(res.student);
+          localStorage.setItem("mosque_student", JSON.stringify(res.student));
+        }
+      } else if (updateQuantity) {
+        updateQuantity(productId, newQty);
+      }
+    } catch (err) {
+      showToast("حدث خطأ أثناء تعديل الكمية", "warning");
+    }
+  }
+
+  async function handleRemoveItem(productId) {
+    const studentId = student?._id || student?.id;
+    try {
+      if (api.removeFromCart && studentId) {
+        const res = await api.removeFromCart(studentId, productId);
+        if (res?.student) {
+          setStudent(res.student);
+          localStorage.setItem("mosque_student", JSON.stringify(res.student));
+        }
+      } else if (removeFromCart) {
+        removeFromCart(productId);
+      }
+      showToast("تمت إزالة المنتج من السلة", "success");
+    } catch (err) {
+      showToast("حدث خطأ أثناء إزالة المنتج", "warning");
     }
   }
 
   async function handleCheckout() {
-    if (cart.length === 0) return;
+    if (currentCart.length === 0) return;
+
+    if ((student?.points || 0) < totalPoints) {
+      showToast("نقاطك الحالية لا تكفي لإتمام هذا الطلب!", "warning");
+      return;
+    }
+
     setError("");
     setLoading(true);
 
     try {
       const studentId = student?._id || student?.id;
-      const res = await api.submitOrder(studentId, cart);
+      const res = await api.submitOrder(studentId, currentCart);
 
       if (res && res.student) {
         setStudent(res.student);
         localStorage.setItem("mosque_student", JSON.stringify(res.student));
       }
 
-      // حفظ تفاصيل الطلب لعرضها بعد الشراء
       const newOrder = {
-        items: [...cart],
+        items: [...currentCart],
         total: totalPoints,
         date: new Date().toLocaleString("ar-EG", {
           day: "2-digit",
@@ -73,25 +130,90 @@ export default function Cart({
           hour: "2-digit",
           minute: "2-digit"
         }),
-        orderId: res.order?._id || Date.now()
+        orderId: res?.order?._id || Date.now()
       };
 
       setLastOrder(newOrder);
-      // إضافة الطلب الجديد إلى تاريخ الطلبات
       setOrderHistory(prev => [newOrder, ...prev]);
 
-      clearCart();
-      alert("تم تأكيد الطلب وخصم النقاط بنجاح! 🎉");
+      if (clearCart) clearCart();
+
+      showToast("تم تأكيد الطلب وخصم النقاط بنجاح! 🎉", "success");
     } catch (err) {
-      setError(err.message || "حدث خطأ أثناء الشراء");
+      const errMsg = err?.message || "حدث خطأ أثناء الشراء";
+      setError(errMsg);
+      showToast(errMsg, "warning");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px 16px" }}>
-      {/* Header - نفس الكود الموجود */}
+    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px 16px", position: "relative" }}>
+      
+      {/* 🔔 الإشعار الاحترافي العائم (Toast Notification) */}
+      {toast && (
+        <div style={{
+          position: "fixed",
+          top: "24px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "14px 22px",
+          borderRadius: "14px",
+          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+          background: toast.type === "success" ? "#059669" : "#dc2626",
+          color: "#ffffff",
+          fontWeight: "600",
+          fontSize: "15px",
+          animation: "toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          minWidth: "300px",
+          maxWidth: "90%",
+          justifyContent: "space-between"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "18px" }}>
+              {toast.type === "success" ? "✅" : "⚠️"}
+            </span>
+            <span>{toast.message}</span>
+          </div>
+
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "white",
+              fontSize: "18px",
+              cursor: "pointer",
+              padding: "0 4px",
+              lineHeight: "1",
+              opacity: 0.8
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* حركة أنيميشن الإشعار */}
+      <style>{`
+        @keyframes toastIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0) scale(1);
+          }
+        }
+      `}</style>
+
+      {/* Header */}
       <div style={{
         display: "flex",
         justifyContent: "space-between",
@@ -110,7 +232,7 @@ export default function Cart({
               النقاط المتبقية: {student.points || 0}
             </span>
           )}
-          <Link to="/" style={{ textDecoration: "none" }}>
+          <Link to="/store" style={{ textDecoration: "none" }}>
             <button style={{
               background: "var(--bg-main)",
               color: "var(--text-secondary)",
@@ -126,7 +248,7 @@ export default function Cart({
         </div>
       </div>
 
-      {/* Error Notice - نفس الكود */}
+      {/* Error Notice */}
       {error && (
         <div style={{
           color: "#dc2626",
@@ -142,8 +264,8 @@ export default function Cart({
         </div>
       )}
 
-      {/* Cart Content - نفس الكود */}
-      {cart.length === 0 ? (
+      {/* Cart Content */}
+      {currentCart.length === 0 ? (
         <div style={{
           background: "var(--surface)",
           padding: "40px 24px",
@@ -177,17 +299,22 @@ export default function Cart({
               </tr>
             </thead>
             <tbody>
-              {cart.map((item) => (
-                <tr key={item.productId}>
+              {currentCart.map((item) => (
+                <tr key={item.productId || item._id}>
                   <td style={{ fontWeight: "600" }}>{item.name}</td>
                   <td style={{ textAlign: "center" }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--bg-main)", padding: "4px 8px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                      <button onClick={() => handleQuantityChange(item.productId || item._id, item.quantity, -1)} style={{ borderRadius: "4px", border: "1px solid var(--border-color)", background: "white", cursor: "pointer", padding: "2px 6px", fontWeight: "bold" }}>➖</button>
+                      <span style={{ fontWeight: "700" }}>{item.quantity}</span>
+                      <button onClick={() => handleQuantityChange(item.productId || item._id, item.quantity, 1)} style={{ borderRadius: "4px", border: "1px solid var(--border-color)", background: "white", cursor: "pointer", padding: "2px 6px", fontWeight: "bold" }}>➕</button>
+                    </div>
                   </td>
                   <td style={{ color: "var(--accent)", fontWeight: "700" }}>
                     {item.price * item.quantity} نقطة
                   </td>
                   <td style={{ textAlign: "center" }}>
                     <button
-                      onClick={() => removeFromCart(item.productId)}
+                      onClick={() => handleRemoveItem(item.productId || item._id)}
                       style={{
                         background: "#fef2f2",
                         color: "#dc2626",
@@ -241,7 +368,7 @@ export default function Cart({
         </div>
       )}
 
-      {/* قسم المشتريات الأخيرة - تحسين العرض */}
+      {/* قسم المشتريات الأخيرة */}
       {(lastOrder || orderHistory.length > 0) && (
         <div style={{ marginTop: "24px" }}>
           <h3 style={{ 
@@ -266,7 +393,7 @@ export default function Cart({
 
           {orderHistory.map((order, index) => (
             <div
-              key={order.orderId || index}
+              key={order.orderId || order._id || index}
               style={{
                 background: index === 0 && lastOrder ? "#f0fdf4" : "var(--surface)",
                 border: index === 0 && lastOrder ? "2px solid #bbf7d0" : "1px solid var(--border-color)",
@@ -298,7 +425,7 @@ export default function Cart({
                     </span>
                   )}
                   <span style={{ fontWeight: "600", color: "var(--text-primary)" }}>
-                    طلب #{index + 1}
+                    طلب #{orderHistory.length - index}
                   </span>
                 </div>
               </div>
@@ -309,9 +436,9 @@ export default function Cart({
                 gap: "8px",
                 marginBottom: "8px"
               }}>
-                {order.items.map((item) => (
+                {order.items?.map((item, idx) => (
                   <div
-                    key={item.productId}
+                    key={item.productId || idx}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -341,7 +468,7 @@ export default function Cart({
                   إجمالي الطلب
                 </span>
                 <span style={{ fontWeight: "700", color: "var(--accent)", fontSize: "16px" }}>
-                  {order.total || order.items.reduce((sum, i) => sum + i.price * i.quantity, 0)} نقطة
+                  {order.total || order.items?.reduce((sum, i) => sum + i.price * i.quantity, 0)} نقطة
                 </span>
               </div>
             </div>

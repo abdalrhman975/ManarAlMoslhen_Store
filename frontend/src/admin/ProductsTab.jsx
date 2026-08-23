@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { api } from "../api.js";
 import * as XLSX from "xlsx";
 
-
 export default function ProductsTab() {
   const [products, setProducts] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -15,9 +14,25 @@ export default function ProductsTab() {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
+  // حالة الإشعار الاحترافي (Toast)
+  const [toast, setToast] = useState(null); // { message, type: 'success' | 'warning' | 'error' }
+
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // إخفاء الإشعار تلقائياً بعد 3.5 ثانية
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
 
   async function loadProducts() {
     try {
@@ -37,7 +52,7 @@ export default function ProductsTab() {
     setImage(null);
   }
 
-    function getImageUrl(imageUrl) {
+  function getImageUrl(imageUrl) {
     if (!imageUrl) return null;
     if (imageUrl.startsWith('/uploads')) {
       return `https://manaralmoslhen-store.onrender.com${imageUrl}`;
@@ -78,15 +93,17 @@ export default function ProductsTab() {
 
       if (editingProduct) {
         await api.updateProduct(editingProduct._id, formData);
+        showToast("تم حفظ تعديل المنتج بنجاح! ✏️", "success");
       } else {
         await api.createProduct(formData);
+        showToast("تمت إضافة المنتج بنجاح! 🎉", "success");
       }
 
       resetForm();
       await loadProducts();
     } catch (error) {
       console.error("خطأ في حفظ المنتج:", error);
-      alert(error.message);
+      showToast(error.message, "error");
     } finally {
       setLoading(false);
     }
@@ -96,89 +113,148 @@ export default function ProductsTab() {
     if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
       try {
         await api.deleteProduct(id);
+        showToast("تم حذف المنتج بنجاح", "success");
         await loadProducts();
       } catch (error) {
         console.error("خطأ في حذف المنتج:", error);
-        alert(error.message);
+        showToast(error.message, "error");
       }
     }
   }
 
+  function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-   function handleFileUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+    setLoading(true);
+    const reader = new FileReader();
 
-  setLoading(true);
-  const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
 
-  reader.onload = async (evt) => {
-    try {
-      const bstr = evt.target.result;
-      const wb = XLSX.read(bstr, { type: "binary" });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json(ws);
+        if (!data || data.length === 0) {
+          showToast("الملف فارغ أو لا يحتوي على بيانات صالحة", "warning");
+          return;
+        }
 
-      if (!data || data.length === 0) {
-        alert("الملف فارغ أو لا يحتوي على بيانات صالحة");
-        return;
-      }
+        const formattedProducts = data.map((item, index) => {
+          const cleanItem = {};
+          Object.keys(item).forEach((key) => {
+            cleanItem[key.trim()] = item[key];
+          });
 
-      const formattedProducts = data.map((item, index) => {
-        // 1. تنظيف مفاتيح الأعمدة من المسافات المخفية (Leading/Trailing spaces)
-        const cleanItem = {};
-        Object.keys(item).forEach((key) => {
-          cleanItem[key.trim()] = item[key];
+          const rawName =
+            cleanItem["اسم اللعبة"] ||
+            cleanItem["الاسم"] ||
+            cleanItem["اسم المنتج"] ||
+            cleanItem["name"] ||
+            cleanItem["Name"];
+
+          const name = rawName ? String(rawName).trim() : `منتج ${index + 1}`;
+
+          const category = String(
+            cleanItem["التصنيف"] || cleanItem["النوع"] || cleanItem["category"] || "أخرى"
+          ).trim();
+
+          const rawPrice =
+            cleanItem["السعر"] ??
+            cleanItem["النقاط"] ??
+            cleanItem["points"] ??
+            cleanItem["price"] ??
+            0;
+
+          return {
+            name,
+            category,
+            price: Number(rawPrice) || 0,
+          };
         });
 
-        // 2. البحث عن اسم المنتج وتجنب إعطاء نفس الاسم لجميع الصفوف
-        const rawName =
-          cleanItem["اسم اللعبة"] ||
-          cleanItem["الاسم"] ||
-          cleanItem["اسم المنتج"] ||
-          cleanItem["name"] ||
-          cleanItem["Name"];
+        await api.bulkCreateProducts(formattedProducts);
+        showToast(`تمت إضافة ${formattedProducts.length} منتجات بنجاح! 🎉`, "success");
+        await loadProducts();
+      } catch (err) {
+        showToast("حدث خطأ أثناء قراءة الملف: " + err.message, "error");
+      } finally {
+        setLoading(false);
+        e.target.value = "";
+      }
+    };
 
-        const name = rawName ? String(rawName).trim() : `منتج ${index + 1}`;
+    reader.readAsBinaryString(file);
+  }
 
-        // 3. استخراج التصنيف
-        const category = String(
-          cleanItem["التصنيف"] || cleanItem["النوع"] || cleanItem["category"] || "أخرى"
-        ).trim();
-
-        // 4. استخراج السعر باستخدام (??) لمنع تجاهل الصفر كقيمة صحيحة
-        const rawPrice =
-          cleanItem["السعر"] ??
-          cleanItem["النقاط"] ??
-          cleanItem["points"] ??
-          cleanItem["price"] ??
-          0;
-
-        return {
-          name,
-          category,
-          price: Number(rawPrice) || 0,
-        };
-      });
-
-      console.log("البيانات الجاهزة للإرسال للباك إند:", formattedProducts);
-
-      await api.bulkCreateProducts(formattedProducts);
-      alert(`تمت إضافة ${formattedProducts.length} منتجات بنجاح! 🎉`);
-      await loadProducts();
-    } catch (err) {
-      alert("حدث خطأ أثناء قراءة الملف: " + err.message);
-    } finally {
-      setLoading(false);
-      e.target.value = "";
-    }
-  };
-
-  reader.readAsBinaryString(file);
-}
   return (
-    <div>
+    <div style={{ position: "relative" }}>
+      {/* 🔔 الإشعار الاحترافي العائم (Toast Notification) */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            top: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "14px 22px",
+            borderRadius: "14px",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+            background: toast.type === "success" ? "#059669" : toast.type === "warning" ? "#d97706" : "#dc2626",
+            color: "#ffffff",
+            fontWeight: "600",
+            fontSize: "15px",
+            animation: "toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+            minWidth: "300px",
+            maxWidth: "90%",
+            justifyContent: "space-between"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "18px" }}>
+              {toast.type === "success" ? "✅" : toast.type === "warning" ? "⚠️" : "❌"}
+            </span>
+            <span>{toast.message}</span>
+          </div>
+
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "white",
+              fontSize: "18px",
+              cursor: "pointer",
+              padding: "0 4px",
+              lineHeight: "1",
+              opacity: 0.8
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* انيميشن ظهور الإشعار */}
+      <style>{`
+        @keyframes toastIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0) scale(1);
+          }
+        }
+      `}</style>
+
       {/* نموذج إضافة وتعديل المنتجات */}
       <form
         onSubmit={handleSubmit}
@@ -227,7 +303,7 @@ export default function ProductsTab() {
             <option value="لعبة">🎮 لعبة</option>
             <option value="كتاب">📚 كتاب</option>
             <option value="قرطاسية">✏️ قرطاسية</option>
-            <option value="قرطاسية">🚨 إلكترونيات </option>
+            <option value="إلكترونيات">🚨 إلكترونيات</option>
             <option value="أخرى">📌 أخرى</option>
           </select>
 
@@ -328,110 +404,103 @@ export default function ProductsTab() {
       </form>
 
       {/* جدول عرض المنتجات */}
-      <div style={{ background: "#ffffff", padding: "24px", borderRadius: "16px", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)", overflowX: "auto" }}>
+      <div style={{ background: "#ffffff", padding: "24px", borderRadius: "16px", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <h3 style={{ margin: 0, fontSize: "18px", color: "#1e293b", fontWeight: "700" }}>
+            📦 قائمة المنتجات ({products.length})
+          </h3>
 
-        <label
-              style={{
-                background: "#eff6ff",
-                color: "#2563eb",
-                border: "1px solid #bfdbfe",
-                padding: "8px 16px",
-                borderRadius: "10px",
-                cursor: "pointer",
-                fontWeight: "600",
-                fontSize: "13px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                transition: "all 0.2s ease"
-              }}
-            >
-              {loading ? "⏳ جاري الاستيراد..." : "📤 استيراد من Excel"}
-              <input
-                type="file"
-                accept=".xlsx, .xls, .csv"
-                onChange={handleFileUpload}
-                style={{ display: "none" }}
-                disabled={loading}
-              />
-            </label>
-        <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0", textAlign: "right" }}>
-          <thead>
-            <tr style={{ background: "#f8fafc", fontSize: "13px", color: "#475569" }}>
-              {/* <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>الصورة</th> */}
-              <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>اسم المنتج</th>
-              <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>التصنيف</th>
-              <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>السعر</th>
-              <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>إجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              
-              <tr key={p._id}>
-                {/* <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", width: "60px" }}>
-                  {p.imageUrl ? (
-                    <img
-                      src={`https://manaralmoslhen-store.onrender.com${p.imageUrl}`}
-                      alt={p.name}
-                      style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e8f0" }}
-                    />
-                  ) : (
-                    <div style={{ width: "44px", height: "44px", background: "#f1f5f9", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
-                      🖼️
-                    </div>
-                  )}
-                </td> */}
-                <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontWeight: "600", color: "#0f172a" }}>
-                  {p.name}
-                </td>
-                <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: "13px", color: "#475569" }}>
-                  <span style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "4px 10px", borderRadius: "6px" }}>
-                    {p.category}
-                  </span>
-                </td>
-                <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontWeight: "700", color: "#2DAFBB" }}>
-                  {p.price} نقطة
-                </td>
-                <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button
-                      onClick={() => startEdit(p)}
-                      title="تعديل"
-                      style={{
-                        background: "#f1f5f9",
-                        color: "#2DAFBB",
-                        border: "1px solid #cbd5e1",
-                        padding: "6px 12px",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: "600"
-                      }}
-                    >
-                      ✏️ تعديل
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p._id)}
-                      style={{
-                        background: "#fef2f2",
-                        color: "#ef4444",
-                        border: "1px solid #fecaca",
-                        padding: "6px 12px",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: "600"
-                      }}
-                    >
-                      🗑️ حذف
-                    </button>
-                  </div>
-                </td>
+          <label
+            style={{
+              background: "#eff6ff",
+              color: "#2563eb",
+              border: "1px solid #bfdbfe",
+              padding: "8px 16px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "13px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              transition: "all 0.2s ease"
+            }}
+          >
+            {loading ? "⏳ جاري الاستيراد..." : "📤 استيراد من Excel"}
+            <input
+              type="file"
+              accept=".xlsx, .xls, .csv"
+              onChange={handleFileUpload}
+              style={{ display: "none" }}
+              disabled={loading}
+            />
+          </label>
+        </div>
+
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0", textAlign: "right" }}>
+            <thead>
+              <tr style={{ background: "#f8fafc", fontSize: "13px", color: "#475569" }}>
+                <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>اسم المنتج</th>
+                <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>التصنيف</th>
+                <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>السعر</th>
+                <th style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>إجراءات</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {products.map((p) => (
+                <tr key={p._id}>
+                  <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontWeight: "600", color: "#0f172a" }}>
+                    {p.name}
+                  </td>
+                  <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: "13px", color: "#475569" }}>
+                    <span style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "4px 10px", borderRadius: "6px" }}>
+                      {p.category}
+                    </span>
+                  </td>
+                  <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontWeight: "700", color: "#2DAFBB" }}>
+                    {p.price} نقطة
+                  </td>
+                  <td style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9" }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        onClick={() => startEdit(p)}
+                        title="تعديل"
+                        style={{
+                          background: "#f1f5f9",
+                          color: "#2DAFBB",
+                          border: "1px solid #cbd5e1",
+                          padding: "6px 12px",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: "600"
+                        }}
+                      >
+                        ✏️ تعديل
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p._id)}
+                        style={{
+                          background: "#fef2f2",
+                          color: "#ef4444",
+                          border: "1px solid #fecaca",
+                          padding: "6px 12px",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          fontWeight: "600"
+                        }}
+                      >
+                        🗑️ حذف
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

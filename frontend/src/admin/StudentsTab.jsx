@@ -15,9 +15,25 @@ export default function StudentsTab() {
   const [points, setPoints] = useState(0);
   const [password, setPassword] = useState(generate5DigitPassword());
 
+  // حالة الإشعار الاحترافي (Toast)
+  const [toast, setToast] = useState(null); // { message, type: 'success' | 'warning' | 'error' }
+
   useEffect(() => {
     loadStudents();
   }, []);
+
+  // إخفاء الإشعار تلقائياً بعد 3.5 ثانية
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
 
   async function loadStudents() {
     try {
@@ -34,18 +50,18 @@ export default function StudentsTab() {
   // إضافة طالب يدوياً
   async function handleAddManual(e) {
     e.preventDefault();
-    if (!name.trim()) return alert("يرجى كتابة اسم الطالب");
+    if (!name.trim()) return showToast("يرجى كتابة اسم الطالب", "warning");
 
     try {
       await api.addStudent({ name, phone, points, password });
-      alert("تمت إضافة الطالب بنجاح!");
+      showToast("تمت إضافة الطالب بنجاح! 🎉", "success");
       setName("");
       setPhone("");
       setPoints(0);
       setPassword(generate5DigitPassword());
       loadStudents();
     } catch (err) {
-      alert("خطأ: " + err.message);
+      showToast("خطأ: " + err.message, "error");
     }
   }
 
@@ -54,9 +70,10 @@ export default function StudentsTab() {
     if (!confirm("هل أنت متأكد من حذف هذا الطالب؟")) return;
     try {
       await api.deleteStudent(id);
+      showToast("تم حذف الطالب بنجاح", "success");
       loadStudents();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, "error");
     }
   }
 
@@ -84,10 +101,10 @@ export default function StudentsTab() {
         }));
 
         await api.bulkCreateStudents(formattedStudents);
-        alert(`تمت إضافة ${formattedStudents.length} طالب بنجاح! 🎉`);
+        showToast(`تمت إضافة ${formattedStudents.length} طالب بنجاح! 🎉`, "success");
         loadStudents();
       } catch (err) {
-        alert("حدث خطأ أثناء قراءة الملف: " + err.message);
+        showToast("حدث خطأ أثناء قراءة الملف: " + err.message, "error");
       } finally {
         setLoading(false);
         e.target.value = "";
@@ -98,7 +115,7 @@ export default function StudentsTab() {
   }
 
   function exportStudentsToExcel() {
-    if (!students.length) return alert("لا توجد بيانات طلاب للتصدير حالياً.");
+    if (!students.length) return showToast("لا توجد بيانات طلاب للتصدير حالياً.", "warning");
 
     const headers = ["اسم الطالب", "رقم الواتس", "كلمة السر (صريحة)", "النقاط"];
     const rows = students.map((s) => [
@@ -114,10 +131,73 @@ export default function StudentsTab() {
     link.href = URL.createObjectURL(blob);
     link.download = `قائمة_الطلاب_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
+    showToast("تم تصدير ملف الطلاب بنجاح! 📥", "success");
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px", position: "relative" }}>
+
+      {/* 🔔 الإشعار الاحترافي العائم (Toast Notification) */}
+      {toast && (
+        <div style={{
+          position: "fixed",
+          top: "24px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "14px 22px",
+          borderRadius: "14px",
+          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+          background: toast.type === "success" ? "#059669" : toast.type === "warning" ? "#d97706" : "#dc2626",
+          color: "#ffffff",
+          fontWeight: "600",
+          fontSize: "15px",
+          animation: "toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          minWidth: "300px",
+          maxWidth: "90%",
+          justifyContent: "space-between"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "18px" }}>
+              {toast.type === "success" ? "✅" : toast.type === "warning" ? "⚠️" : "❌"}
+            </span>
+            <span>{toast.message}</span>
+          </div>
+
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "white",
+              fontSize: "18px",
+              cursor: "pointer",
+              padding: "0 4px",
+              lineHeight: "1",
+              opacity: 0.8
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* انيميشن ظهورة الإشعار */}
+      <style>{`
+        @keyframes toastIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0) scale(1);
+          }
+        }
+      `}</style>
 
       {/* 1. نموذج إضافة طالب جديد */}
       <div
