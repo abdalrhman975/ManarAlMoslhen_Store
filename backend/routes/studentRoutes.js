@@ -263,19 +263,6 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// ---------------------------------------------------------
-// 6. حذف طالب وحذف طلباته
-// ---------------------------------------------------------
-router.delete("/:id", async (req, res) => {
-  try {
-    const studentId = req.params.id;
-    await Student.findByIdAndDelete(studentId);
-    await Order.deleteMany({ student: studentId });
-    res.json({ message: "تم حذف الطالب وطلباته بنجاح" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
 
 // ---------------------------------------------------------
 // 7. حذف جميع الطلاب وحذف كل طلباتهم
@@ -293,5 +280,20 @@ router.delete("/", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// ---------------------------------------------------------
+// 6. حذف طالب وحذف طلباته
+// ---------------------------------------------------------
+router.delete("/:id", async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    await Student.findByIdAndDelete(studentId);
+    await Order.deleteMany({ student: studentId });
+    res.json({ message: "تم حذف الطالب وطلباته بنجاح" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 module.exports = router;
