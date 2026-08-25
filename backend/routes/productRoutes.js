@@ -1,8 +1,15 @@
-const fs = require("fs");
-const path = require("path");
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
+const { cloudinary } = require("../config/cloudinary");
+
+// دالة مساعدة لاستخراج public_id لحذف الصورة من Cloudinary
+const getPublicIdFromUrl = (url) => {
+  if (!url || !url.includes("cloudinary.com")) return null;
+  const parts = url.split("/");
+  const folderAndFilename = parts.slice(-2).join("/"); // يستخرج: folder/filename
+  return folderAndFilename.split(".")[0];
+};
 
 // GET - جلب جميع المنتجات
 router.get("/", async (req, res) => {
@@ -26,8 +33,8 @@ router.post("/", async (req, res) => {
       try {
         const { name, category, price } = req.body;
         
-        // حفظ مسار نسبي دائماً لتسهيل النقل بين المحلية وRender
-        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        // req.file.path يحتوي على رابط HTTPS المباشر من Cloudinary
+        const imageUrl = req.file ? req.file.path : null;
 
         const product = new Product({
           name: name ? name.trim() : "",
@@ -39,7 +46,6 @@ router.post("/", async (req, res) => {
         await product.save();
         res.status(201).json(product);
       } catch (error) {
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ message: error.message });
       }
     });
@@ -63,12 +69,12 @@ router.put("/:id", async (req, res) => {
         let imageUrl = product.imageUrl;
 
         if (req.file) {
-          if (product.imageUrl && product.imageUrl.includes("/uploads/")) {
-            const filename = product.imageUrl.split("/uploads/")[1];
-            const oldPath = path.join(__dirname, "..", "uploads", filename);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+          // حذف الصورة القديمة من Cloudinary لتوفير المساحة
+          const oldPublicId = getPublicIdFromUrl(product.imageUrl);
+          if (oldPublicId) {
+            await cloudinary.uploader.destroy(oldPublicId).catch(() => null);
           }
-          imageUrl = `/uploads/${req.file.filename}`;
+          imageUrl = req.file.path; // الرابط الجديد من Cloudinary
         }
 
         product.name = name ? name.trim() : product.name;
@@ -79,7 +85,6 @@ router.put("/:id", async (req, res) => {
         await product.save();
         res.json(product);
       } catch (error) {
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ message: error.message });
       }
     });
@@ -94,10 +99,10 @@ router.delete("/:id", async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "المنتج غير موجود" });
 
-    if (product.imageUrl && product.imageUrl.includes("/uploads/")) {
-      const filename = product.imageUrl.split("/uploads/")[1];
-      const imagePath = path.join(__dirname, "..", "uploads", filename);
-      if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    // حذف الصورة من Cloudinary
+    const publicId = getPublicIdFromUrl(product.imageUrl);
+    if (publicId) {
+      await cloudinary.uploader.destroy(publicId).catch(() => null);
     }
 
     await Product.findByIdAndDelete(req.params.id);

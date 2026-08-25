@@ -43,22 +43,19 @@ export default function ProductsTab() {
     }
   }
 
-  function startEdit(product) {
-    setEditingProduct(product);
-    setName(product.name);
-    setCategory(product.category);
-    setPrice(product.price.toString());
-    setImagePreview(product.imageUrl ? `https://manaralmoslhen-store.onrender.com${product.imageUrl}` : null);
-    setImage(null);
-  }
+function startEdit(product) {
+  setEditingProduct(product);
+  setName(product.name);
+  setCategory(product.category);
+  setPrice(product.price.toString());
+  setImagePreview(getImageUrl(product.imageUrl));
+  setImage(null);
+}
 
-  function getImageUrl(imageUrl) {
-    if (!imageUrl) return null;
-    if (imageUrl.startsWith('/uploads')) {
-      return `https://manaralmoslhen-store.onrender.com${imageUrl}`;
-    }
-    return imageUrl;
-  }
+function getImageUrl(imageUrl) {
+  if (!imageUrl) return null;
+  return imageUrl; 
+}
 
   function resetForm() {
     setEditingProduct(null);

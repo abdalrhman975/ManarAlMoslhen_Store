@@ -42,7 +42,7 @@ export default function Market({ student, setStudent, onLogout, cart = [], addTo
   // 🛒 إضافة المنتج إلى سلة الطالب في قاعدة البيانات
   async function handleAddToCart(product, quantity) {
     const itemCost = product.price * quantity;
-    
+
     // 1. حالة عدم كفاية الرصيد
     if (remainingPoints < itemCost) {
       showToast(
@@ -82,23 +82,12 @@ export default function Market({ student, setStudent, onLogout, cart = [], addTo
   function getImageUrl(imageUrl) {
     if (!imageUrl || typeof imageUrl !== "string") return null;
     const cleanUrl = imageUrl.trim();
-    if (!cleanUrl) return null;
-
-    if (cleanUrl.startsWith("/uploads")) {
-      return `https://manaralmoslhen-store.onrender.com${cleanUrl}`;
-    }
-
-    if (cleanUrl.includes("/uploads/")) {
-      const filename = cleanUrl.split("/uploads/")[1];
-      return `https://manaralmoslhen-store.onrender.com/uploads/${filename}`;
-    }
-
-    return cleanUrl;
+    return cleanUrl || null;
   }
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px 16px", position: "relative" }}>
-      
+
       {/* 🔔 الإشعار الاحترافي العائم (Toast Notification) */}
       {toast && (
         <div style={{
@@ -120,7 +109,7 @@ export default function Market({ student, setStudent, onLogout, cart = [], addTo
           animation: "toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
           minWidth: "300px",
           maxWidth: "90%",
-          justifyInContent: "space-between" 
+          justifyInContent: "space-between"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ fontSize: "18px" }}>
@@ -163,116 +152,116 @@ export default function Market({ student, setStudent, onLogout, cart = [], addTo
 
       {/* Header / Topbar */}
       <div style={{
-  display: "flex",
-  flexDirection: "column",
-  gap: "14px",
-  background: "linear-gradient(135deg, #2DAFBB 0%, #1C9BBB 100%)",
-  padding: "16px",
-  borderRadius: "16px",
-  boxShadow: "0 4px 14px rgba(0, 0, 0, 0.05)",
-  borderBottom: "4px solid #EBC250",
-  marginBottom: "24px",
-  width: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden"
-}}>
-  {/* الصف الأول: الترحيب (يمين) والشعار (أقصى اليسار) */}
-  <div style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%"
-  }}>
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <h2 style={{ margin: 0, fontSize: "15px", color: "white", fontWeight: "bold", whiteSpace: "nowrap" }}>
-        أهلاً بك، {student?.name} 👋
-      </h2>
-      <span style={{ fontSize: "12px", color: "#f8fafc", whiteSpace: "nowrap" }}>
-        الرصيد: <strong style={{ fontSize: "14px", color: "#EBC250" }}>{remainingPoints} نقطة</strong>
-      </span>
-    </div>
-
-    <img
-      src="/logo3.png"
-      alt="شعار نادي سمو الصيفي"
-      style={{
-        height: "38px",
-        width: "auto",
-        objectFit: "contain",
-        borderRadius: "8px",
-        background: "white",
-        padding: "3px 8px",
-        border: "1.5px solid #EBC250",
-        flexShrink: 0
-      }}
-    />
-  </div>
-
-  {/* الصف الثاني: أزرار التحكم (تأخذ العرض بالكامل متساوية) */}
-  <div style={{
-    display: "flex",
-    gap: "8px",
-    alignItems: "center",
-    width: "100%"
-  }}>
-    <Link to="/store/cart" style={{ textDecoration: "none", flex: "1" }}>
-      <button style={{
-        width: "100%",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "6px",
-        padding: "8px 12px",
-        background: "#EBC250",
-        color: "#ffffff",
-        border: "none",
-        borderRadius: "8px",
-        fontWeight: "bold",
-        cursor: "pointer",
-        fontSize: "13px",
-        whiteSpace: "nowrap"
+        flexDirection: "column",
+        gap: "14px",
+        background: "linear-gradient(135deg, #2DAFBB 0%, #1C9BBB 100%)",
+        padding: "16px",
+        borderRadius: "16px",
+        boxShadow: "0 4px 14px rgba(0, 0, 0, 0.05)",
+        borderBottom: "4px solid #EBC250",
+        marginBottom: "24px",
+        width: "100%",
+        boxSizing: "border-box",
+        overflow: "hidden"
       }}>
-        🛒 السلة
-        <span style={{
-          color: "#2DAFBB",
-          padding: "1px 6px",
-          borderRadius: "6px",
-          fontSize: "11px",
-          fontWeight: "bold",
-          background: "white"
+        {/* الصف الأول: الترحيب (يمين) والشعار (أقصى اليسار) */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%"
         }}>
-          {cartCount}
-        </span>
-      </button>
-    </Link>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <h2 style={{ margin: 0, fontSize: "15px", color: "white", fontWeight: "bold", whiteSpace: "nowrap" }}>
+              أهلاً بك، {student?.name} 👋
+            </h2>
+            <span style={{ fontSize: "12px", color: "#f8fafc", whiteSpace: "nowrap" }}>
+              الرصيد: <strong style={{ fontSize: "14px", color: "#EBC250" }}>{remainingPoints} نقطة</strong>
+            </span>
+          </div>
 
-    <button
-      onClick={() => {
-        if (onLogout) onLogout();
-        else {
-          localStorage.removeItem("mosque_student");
-          localStorage.removeItem("mosque_cart");
-          setStudent(null);
-        }
-      }}
-      style={{
-        flex: "1",
-        background: "white",
-        color: "#2DAFBB",
-        border: "1px solid #fecaca",
-        padding: "8px 12px",
-        borderRadius: "8px",
-        fontWeight: "600",
-        cursor: "pointer",
-        fontSize: "13px",
-        whiteSpace: "nowrap",
-        textAlign: "center"
-      }}
-    >
-      تسجيل الخروج
-    </button>
-  </div>
-</div>
+          <img
+            src="/logo3.png"
+            alt="شعار نادي سمو الصيفي"
+            style={{
+              height: "38px",
+              width: "auto",
+              objectFit: "contain",
+              borderRadius: "8px",
+              background: "white",
+              padding: "3px 8px",
+              border: "1.5px solid #EBC250",
+              flexShrink: 0
+            }}
+          />
+        </div>
+
+        {/* الصف الثاني: أزرار التحكم (تأخذ العرض بالكامل متساوية) */}
+        <div style={{
+          display: "flex",
+          gap: "8px",
+          alignItems: "center",
+          width: "100%"
+        }}>
+          <Link to="/store/cart" style={{ textDecoration: "none", flex: "1" }}>
+            <button style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              padding: "8px 12px",
+              background: "#EBC250",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "13px",
+              whiteSpace: "nowrap"
+            }}>
+              🛒 السلة
+              <span style={{
+                color: "#2DAFBB",
+                padding: "1px 6px",
+                borderRadius: "6px",
+                fontSize: "11px",
+                fontWeight: "bold",
+                background: "white"
+              }}>
+                {cartCount}
+              </span>
+            </button>
+          </Link>
+
+          <button
+            onClick={() => {
+              if (onLogout) onLogout();
+              else {
+                localStorage.removeItem("mosque_student");
+                localStorage.removeItem("mosque_cart");
+                setStudent(null);
+              }
+            }}
+            style={{
+              flex: "1",
+              background: "white",
+              color: "#2DAFBB",
+              border: "1px solid #fecaca",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              fontWeight: "600",
+              cursor: "pointer",
+              fontSize: "13px",
+              whiteSpace: "nowrap",
+              textAlign: "center"
+            }}
+          >
+            تسجيل الخروج
+          </button>
+        </div>
+      </div>
 
       {/* Categories Filter */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "24px", overflowX: "auto", paddingBottom: "4px" }}>
