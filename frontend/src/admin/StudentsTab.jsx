@@ -15,6 +15,13 @@ export default function StudentsTab() {
   const [points, setPoints] = useState(0);
   const [password, setPassword] = useState(generate5DigitPassword());
 
+  // حالة نموذج التعديل (Modal)
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editPoints, setEditPoints] = useState(0);
+  const [editPassword, setEditPassword] = useState("");
+
   // حالة الإشعار الاحترافي (Toast)
   const [toast, setToast] = useState(null); // { message, type: 'success' | 'warning' | 'error' }
 
@@ -62,6 +69,35 @@ export default function StudentsTab() {
       loadStudents();
     } catch (err) {
       showToast("خطأ: " + err.message, "error");
+    }
+  }
+
+  // فتح نافذة التعديل وتعبئة البيانات الحالية
+  function handleOpenEditModal(student) {
+    setEditingStudent(student);
+    setEditName(student.name || "");
+    setEditPhone(student.phone || "");
+    setEditPoints(student.points || 0);
+    setEditPassword(student.password || "");
+  }
+
+  // حفظ التعديلات
+  async function handleUpdateStudent(e) {
+    e.preventDefault();
+    if (!editName.trim()) return showToast("يرجى كتابة اسم الطالب", "warning");
+
+    try {
+      await api.updateStudent(editingStudent._id, {
+        name: editName,
+        phone: editPhone,
+        points: Number(editPoints),
+        password: editPassword,
+      });
+      showToast("تم تحديث بيانات الطالب بنجاح! ✏️", "success");
+      setEditingStudent(null);
+      loadStudents();
+    } catch (err) {
+      showToast("خطأ أثناء التعديل: " + err.message, "error");
     }
   }
 
@@ -172,7 +208,7 @@ export default function StudentsTab() {
           animation: "toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
           minWidth: "300px",
           maxWidth: "90%",
-          justifyContent: "space-between"
+          justifyInContent: "space-between"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ fontSize: "18px" }}>
@@ -199,7 +235,7 @@ export default function StudentsTab() {
         </div>
       )}
 
-      {/* انيميشن ظهورة الإشعار */}
+      {/* انيميشن ظهور الإشعار */}
       <style>{`
         @keyframes toastIn {
           from {
@@ -509,22 +545,40 @@ export default function StudentsTab() {
                       {s.points} نقطة
                     </td>
                     <td style={{ padding: "12px 16px", textAlign: "center", borderBottom: "1px solid #f1f5f9" }}>
-                      <button
-                        onClick={() => handleDelete(s._id)}
-                        style={{
-                          background: "#fef2f2",
-                          color: "#ef4444",
-                          border: "1px solid #fecaca",
-                          padding: "6px 14px",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        حذف
-                      </button>
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                        <button
+                          onClick={() => handleOpenEditModal(s)}
+                          style={{
+                            background: "#f0fdf4",
+                            color: "#16a34a",
+                            border: "1px solid #bbf7d0",
+                            padding: "6px 14px",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          ✏️ تعديل
+                        </button>
+                        <button
+                          onClick={() => handleDelete(s._id)}
+                          style={{
+                            background: "#fef2f2",
+                            color: "#ef4444",
+                            border: "1px solid #fecaca",
+                            padding: "6px 14px",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          حذف
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -533,6 +587,189 @@ export default function StudentsTab() {
           </div>
         )}
       </div>
+
+      {/* 4. نافذة التعديل المنبثقة (Edit Modal) */}
+      {editingStudent && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(15, 23, 42, 0.45)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999,
+            padding: "16px"
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "18px",
+              padding: "24px",
+              width: "100%",
+              maxWidth: "460px",
+              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#1e293b" }}>
+                ✏️ تعديل بيانات الطالب
+              </h3>
+              <button
+                onClick={() => setEditingStudent(null)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "18px",
+                  cursor: "pointer",
+                  color: "#64748b"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateStudent} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "6px" }}>
+                  اسم الطالب
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "14px",
+                    boxSizing: "border-box"
+                  }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "6px" }}>
+                  رقم الواتس
+                </label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "14px",
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "12px" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "6px" }}>
+                    النقاط
+                  </label>
+                  <input
+                    type="number"
+                    value={editPoints}
+                    onChange={(e) => setEditPoints(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      border: "1px solid #cbd5e1",
+                      fontSize: "14px",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "6px" }}>
+                    كلمة السر
+                  </label>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <input
+                      type="text"
+                      value={editPassword}
+                      onChange={(e) => setEditPassword(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "10px",
+                        border: "1px solid #cbd5e1",
+                        fontSize: "14px",
+                        fontFamily: "monospace",
+                        boxSizing: "border-box"
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditPassword(generate5DigitPassword())}
+                      title="توليد رقم جديد"
+                      style={{
+                        background: "#e2e8f0",
+                        border: "none",
+                        borderRadius: "8px",
+                        padding: "0 10px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      🔄
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    background: "#2DAFBB",
+                    color: "white",
+                    border: "none",
+                    padding: "10px",
+                    borderRadius: "10px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "14px"
+                  }}
+                >
+                  حفظ التعديلات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingStudent(null)}
+                  style={{
+                    flex: 1,
+                    background: "#f1f5f9",
+                    color: "#475569",
+                    border: "1px solid #cbd5e1",
+                    padding: "10px",
+                    borderRadius: "10px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "14px"
+                  }}
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
