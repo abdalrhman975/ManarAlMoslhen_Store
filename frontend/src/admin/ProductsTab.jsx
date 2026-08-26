@@ -43,19 +43,19 @@ export default function ProductsTab() {
     }
   }
 
-function startEdit(product) {
-  setEditingProduct(product);
-  setName(product.name);
-  setCategory(product.category);
-  setPrice(product.price.toString());
-  setImagePreview(getImageUrl(product.imageUrl));
-  setImage(null);
-}
+  function startEdit(product) {
+    setEditingProduct(product);
+    setName(product.name);
+    setCategory(product.category);
+    setPrice(product.price.toString());
+    setImagePreview(getImageUrl(product.imageUrl));
+    setImage(null);
+  }
 
-function getImageUrl(imageUrl) {
-  if (!imageUrl) return null;
-  return imageUrl; 
-}
+  function getImageUrl(imageUrl) {
+    if (!imageUrl) return null;
+    return imageUrl;
+  }
 
   function resetForm() {
     setEditingProduct(null);
@@ -119,6 +119,28 @@ function getImageUrl(imageUrl) {
     }
   }
 
+  // 🆕 دالة حذف جميع المنتجات
+ async function handleDeleteAll() {
+    if (products.length === 0) return;
+
+    if (confirm("⚠️ هل أنت متأكد حقاً من حذف جميع المنتجات؟ لا يمكن التراجع عن هذه الخطوة!")) {
+      setLoading(true);
+      try {
+        // حلقة تكرارية لحذف جميع المنتجات بالاعتماد على الـ API الحالي لـ deleteProduct
+        await Promise.all(products.map((product) => api.deleteProduct(product._id)));
+
+        showToast("تم حذف جميع المنتجات بنجاح 🗑️", "success");
+        await loadProducts();
+      } catch (error) {
+        console.error("خطأ في حذف جميع المنتجات:", error);
+        showToast("حدث خطأ أثناء حذف بعض أو كل المنتجات", "error");
+        await loadProducts();
+      } finally {
+        setLoading(false);
+      }
+    }
+  }
+
   function handleFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -158,17 +180,32 @@ function getImageUrl(imageUrl) {
             cleanItem["التصنيف"] || cleanItem["النوع"] || cleanItem["category"] || "أخرى"
           ).trim();
 
-          const rawPrice =
+          let rawPrice =
+            cleanItem["السعر (نقاط)"] ??
+            cleanItem["السعر(نقاط)"] ??
             cleanItem["السعر"] ??
             cleanItem["النقاط"] ??
             cleanItem["points"] ??
             cleanItem["price"] ??
             0;
 
+          if (typeof rawPrice === "string") {
+            const cleanPriceStr = rawPrice.replace(/[^0-9.]/g, "");
+            rawPrice = cleanPriceStr ? parseFloat(cleanPriceStr) : 0;
+          }
+
+          const rawImageUrl =
+            cleanItem["رابط الصورة"] ||
+            cleanItem["الصورة"] ||
+            cleanItem["imageUrl"] ||
+            cleanItem["image"] ||
+            "";
+
           return {
             name,
             category,
             price: Number(rawPrice) || 0,
+            imageUrl: String(rawImageUrl).trim(),
           };
         });
 
@@ -210,7 +247,7 @@ function getImageUrl(imageUrl) {
             animation: "toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
             minWidth: "300px",
             maxWidth: "90%",
-            justifyContent: "space-between"
+            justifyInContent: "space-between"
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -402,36 +439,64 @@ function getImageUrl(imageUrl) {
 
       {/* جدول عرض المنتجات */}
       <div style={{ background: "#ffffff", padding: "24px", borderRadius: "16px", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0, 0, 0, 0.03)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
           <h3 style={{ margin: 0, fontSize: "18px", color: "#1e293b", fontWeight: "700" }}>
             📦 قائمة المنتجات ({products.length})
           </h3>
 
-          <label
-            style={{
-              background: "#eff6ff",
-              color: "#2563eb",
-              border: "1px solid #bfdbfe",
-              padding: "8px 16px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontWeight: "600",
-              fontSize: "13px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              transition: "all 0.2s ease"
-            }}
-          >
-            {loading ? "⏳ جاري الاستيراد..." : "📤 استيراد من Excel"}
-            <input
-              type="file"
-              accept=".xlsx, .xls, .csv"
-              onChange={handleFileUpload}
-              style={{ display: "none" }}
-              disabled={loading}
-            />
-          </label>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            {/* 🆕 زر حذف جميع المنتجات */}
+            {products.length > 0 && (
+              <button
+                type="button"
+                onClick={handleDeleteAll}
+                disabled={loading}
+                style={{
+                  background: "#fef2f2",
+                  color: "#dc2626",
+                  border: "1px solid #fecaca",
+                  padding: "8px 16px",
+                  borderRadius: "10px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: "600",
+                  fontSize: "13px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  opacity: loading ? 0.7 : 1
+                }}
+              >
+                🗑️ حذف جميع المنتجات
+              </button>
+            )}
+
+            {/* زر الاستيراد من Excel */}
+            <label
+              style={{
+                background: "#eff6ff",
+                color: "#2563eb",
+                border: "1px solid #bfdbfe",
+                padding: "8px 16px",
+                borderRadius: "10px",
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: "13px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                transition: "all 0.2s ease"
+              }}
+            >
+              {loading ? "⏳ جاري الاستيراد..." : "📤 استيراد من Excel"}
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={handleFileUpload}
+                style={{ display: "none" }}
+                disabled={loading}
+              />
+            </label>
+          </div>
         </div>
 
         <div style={{ overflowX: "auto" }}>
