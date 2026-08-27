@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "../api.js";
 
 export default function OrdersTab() {
@@ -14,22 +14,27 @@ export default function OrdersTab() {
     setOrders(data || []);
   }
 
-  // تجميع الطلبات حسب الطالب
-  const groupedOrders = orders.reduce((acc, order) => {
-    const studentId = order.student?._id || "deleted";
-    const studentName = order.student?.name || "طالب محذوف";
+  // تجميع الطلبات حسب الطالب مع تحسين الأداء بـ useMemo
+  const groupedOrders = useMemo(() => {
+    return orders.reduce((acc, order) => {
+      const studentId = order.student?._id || "deleted";
+      const studentName = order.student?.name || "طالب محذوف";
 
-    if (!acc[studentId]) {
-      acc[studentId] = {
-        name: studentName,
-        totalSpent: 0,
-        orders: [],
-      };
-    }
-    acc[studentId].orders.push(order);
-    acc[studentId].totalSpent += order.totalPoints;
-    return acc;
-  }, {});
+      if (!acc[studentId]) {
+        acc[studentId] = {
+          name: studentName,
+          totalSpent: 0,
+          orders: [],
+        };
+      }
+      acc[studentId].orders.push(order);
+      acc[studentId].totalSpent += order.totalPoints;
+      return acc;
+    }, {});
+  }, [orders]);
+
+  // حساب عدد الطلاب بأسلوب مباشر ودقيق
+  const studentsCount = Object.keys(groupedOrders).length;
 
   const toggleStudent = (studentId) => {
     setExpandedStudentId(expandedStudentId === studentId ? null : studentId);
@@ -64,6 +69,7 @@ export default function OrdersTab() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
         <h3 style={{ margin: 0, color: "#1e293b", fontSize: "16px", fontWeight: "700" }}>
           📋 طلبات الطلاب <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", display: "block", marginTop: "2px" }}>(انقر على اسم الطالب للتفاصيل)</span>
+          <span style={{ fontSize: "14px", color: "#2DAFBB", marginRight: "6px" }}>({studentsCount})</span>
         </h3>
         <button
           onClick={exportOrdersToExcel}
@@ -88,14 +94,12 @@ export default function OrdersTab() {
         </button>
       </div>
 
-      {/* قائمة طلبات الطلاب (الأكوردبيون) */}
+      {/* قائمة طلبات الطلاب */}
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {Object.entries(groupedOrders).map(([studentId, group]) => {
           const isExpanded = expandedStudentId === studentId;
           return (
             <div key={studentId} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", transition: "all 0.2s ease" }}>
-              {/* رأس بطاقة الطالب */}
-              {/* رأس بطاقة الطالب */}
               <div
                 onClick={() => toggleStudent(studentId)}
                 style={{
@@ -103,19 +107,17 @@ export default function OrdersTab() {
                   padding: "14px 16px",
                   cursor: "pointer",
                   display: "flex",
-                  justifyContent: "space-between", // يدفعهما على أطراف البطاقة
+                  justifyContent: "space-between",
                   alignItems: "center",
                   userSelect: "none",
                   borderRight: isExpanded ? "4px solid #2DAFBB" : "4px solid transparent",
                   gap: "12px"
                 }}
               >
-                {/* الجهة اليمنى: اسم الطالب */}
                 <div style={{ fontWeight: "700", fontSize: "15px", color: "#1e293b", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
                   👤 {group.name}
                 </div>
 
-                {/* الجهة اليسرى: مجموع النقاط + السهم بمسافة واضحة */}
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
                   <span style={{ fontSize: "12px", color: "#64748b", background: "#f8fafc", padding: "4px 12px", borderRadius: "20px", border: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>
                     مجموع النقاط: <strong style={{ color: "#2DAFBB" }}>{group.totalSpent}</strong>
@@ -126,7 +128,6 @@ export default function OrdersTab() {
                 </div>
               </div>
 
-              {/* تفاصيل الطلبات عند التوسيع (بدون جدول) */}
               {isExpanded && (
                 <div style={{ padding: "12px", background: "#f8fafc", borderTop: "1px solid #f1f5f9", display: "flex", flexDirection: "column", gap: "10px" }}>
                   {group.orders.map((o) => (
@@ -140,7 +141,6 @@ export default function OrdersTab() {
                         boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
                       }}
                     >
-                      {/* قائمة المنتجات */}
                       <div style={{ marginBottom: "10px" }}>
                         <span style={{ fontSize: "11px", color: "#64748b", display: "block", marginBottom: "6px", fontWeight: "600" }}>
                           المنتجات المطلوبة:
@@ -165,13 +165,11 @@ export default function OrdersTab() {
                         </div>
                       </div>
 
-                      {/* البيانات السفلية (النقاط + التاريخ) */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", fontSize: "12px", color: "#475569" }}>
                         <span>النقاط: <strong style={{ color: "#2DAFBB" }}>{o.totalPoints}</strong></span>
                         <span>📅 {new Date(o.createdAt).toLocaleDateString("ar-EG")}</span>
                       </div>
 
-                      {/* الحالة والإجراء */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "8px", borderTop: "1px dashed #f1f5f9" }}>
                         {o.status === "delivered" ? (
                           <span style={{ color: "#16a34a", fontWeight: "600", background: "#f0fdf4", padding: "4px 8px", borderRadius: "6px", fontSize: "12px" }}>
